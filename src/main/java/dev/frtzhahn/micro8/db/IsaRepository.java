@@ -1,7 +1,7 @@
-package edu.ucc.micro8.db;
+package dev.frtzhahn.micro8.db;
 
-import edu.ucc.micro8.cpu.ControlSignals;
-import edu.ucc.micro8.cpu.ControlSignals.SignalSpec;
+import dev.frtzhahn.micro8.cpu.ControlSignals;
+import dev.frtzhahn.micro8.cpu.ControlSignals.SignalSpec;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,26 +16,26 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import static edu.ucc.micro8.cpu.ControlSignals.AI;
-import static edu.ucc.micro8.cpu.ControlSignals.AO;
-import static edu.ucc.micro8.cpu.ControlSignals.BI;
-import static edu.ucc.micro8.cpu.ControlSignals.CE;
-import static edu.ucc.micro8.cpu.ControlSignals.CLR;
-import static edu.ucc.micro8.cpu.ControlSignals.CO;
-import static edu.ucc.micro8.cpu.ControlSignals.EO;
-import static edu.ucc.micro8.cpu.ControlSignals.FI;
-import static edu.ucc.micro8.cpu.ControlSignals.HLT;
-import static edu.ucc.micro8.cpu.ControlSignals.II;
-import static edu.ucc.micro8.cpu.ControlSignals.J;
-import static edu.ucc.micro8.cpu.ControlSignals.MI;
-import static edu.ucc.micro8.cpu.ControlSignals.OI;
-import static edu.ucc.micro8.cpu.ControlSignals.RI;
-import static edu.ucc.micro8.cpu.ControlSignals.RO;
-import static edu.ucc.micro8.cpu.ControlSignals.SU;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.AI;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.AO;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.BI;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.CE;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.CLR;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.CO;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.EO;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.FI;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.HLT;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.II;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.J;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.MI;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.OI;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.RI;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.RO;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.SU;
 
 public final class IsaRepository {
 
-    private static final String SCHEMA_RESOURCE = "/edu/ucc/micro8/db/schema.sql";
+    private static final String SCHEMA_RESOURCE = "/dev/frtzhahn/micro8/db/schema.sql";
 
     private static final String SQL_BUS_CONTENTION = """
             SELECT m.opcode,
