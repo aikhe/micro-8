@@ -1,7 +1,7 @@
-package edu.ucc.micro8.db;
+package dev.frtzhahn.micro8.db;
 
-import edu.ucc.micro8.cpu.CpuCore;
-import edu.ucc.micro8.ui.OnboardingController;
+import dev.frtzhahn.micro8.cpu.CpuCore;
+import dev.frtzhahn.micro8.ui.OnboardingController;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
