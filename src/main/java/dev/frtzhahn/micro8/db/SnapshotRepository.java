@@ -1,6 +1,6 @@
-package edu.ucc.micro8.db;
+package dev.frtzhahn.micro8.db;
 
-import edu.ucc.micro8.cpu.CpuCore;
+import dev.frtzhahn.micro8.cpu.CpuCore;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
