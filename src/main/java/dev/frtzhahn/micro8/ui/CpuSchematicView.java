@@ -1,8 +1,8 @@
-package edu.ucc.micro8.ui;
+package dev.frtzhahn.micro8.ui;
 
-import edu.ucc.micro8.cpu.ControlSignals;
-import edu.ucc.micro8.cpu.ControlSignals.SignalSpec;
-import edu.ucc.micro8.cpu.CpuSnapshot;
+import dev.frtzhahn.micro8.cpu.ControlSignals;
+import dev.frtzhahn.micro8.cpu.ControlSignals.SignalSpec;
+import dev.frtzhahn.micro8.cpu.CpuSnapshot;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.Pane;
@@ -11,22 +11,22 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.TextAlignment;
 
-import static edu.ucc.micro8.cpu.ControlSignals.AI;
-import static edu.ucc.micro8.cpu.ControlSignals.AO;
-import static edu.ucc.micro8.cpu.ControlSignals.BI;
-import static edu.ucc.micro8.cpu.ControlSignals.BO;
-import static edu.ucc.micro8.cpu.ControlSignals.BUS_DRIVER_MASK;
-import static edu.ucc.micro8.cpu.ControlSignals.CE;
-import static edu.ucc.micro8.cpu.ControlSignals.CO;
-import static edu.ucc.micro8.cpu.ControlSignals.EO;
-import static edu.ucc.micro8.cpu.ControlSignals.FI;
-import static edu.ucc.micro8.cpu.ControlSignals.II;
-import static edu.ucc.micro8.cpu.ControlSignals.J;
-import static edu.ucc.micro8.cpu.ControlSignals.MI;
-import static edu.ucc.micro8.cpu.ControlSignals.OI;
-import static edu.ucc.micro8.cpu.ControlSignals.RI;
-import static edu.ucc.micro8.cpu.ControlSignals.RO;
-import static edu.ucc.micro8.cpu.ControlSignals.SU;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.AI;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.AO;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.BI;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.BO;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.BUS_DRIVER_MASK;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.CE;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.CO;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.EO;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.FI;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.II;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.J;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.MI;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.OI;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.RI;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.RO;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.SU;
 
 /**
  * Vector canvas rendering the MICRO-8 system bus, registers, ALU, T0-T5 sequencer, and 17 control wires at 60 FPS.
