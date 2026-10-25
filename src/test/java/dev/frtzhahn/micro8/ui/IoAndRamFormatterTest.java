@@ -1,19 +1,19 @@
-package edu.ucc.micro8.ui;
+package dev.frtzhahn.micro8.ui;
 
-import edu.ucc.micro8.cpu.CpuCore;
-import edu.ucc.micro8.cpu.TraceRow;
+import dev.frtzhahn.micro8.cpu.CpuCore;
+import dev.frtzhahn.micro8.cpu.TraceRow;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static edu.ucc.micro8.ui.SevenSegmentCanvas.SEG_A;
-import static edu.ucc.micro8.ui.SevenSegmentCanvas.SEG_B;
-import static edu.ucc.micro8.ui.SevenSegmentCanvas.SEG_C;
-import static edu.ucc.micro8.ui.SevenSegmentCanvas.SEG_D;
-import static edu.ucc.micro8.ui.SevenSegmentCanvas.SEG_E;
-import static edu.ucc.micro8.ui.SevenSegmentCanvas.SEG_F;
-import static edu.ucc.micro8.ui.SevenSegmentCanvas.SEG_G;
+import static dev.frtzhahn.micro8.ui.SevenSegmentCanvas.SEG_A;
+import static dev.frtzhahn.micro8.ui.SevenSegmentCanvas.SEG_B;
+import static dev.frtzhahn.micro8.ui.SevenSegmentCanvas.SEG_C;
+import static dev.frtzhahn.micro8.ui.SevenSegmentCanvas.SEG_D;
+import static dev.frtzhahn.micro8.ui.SevenSegmentCanvas.SEG_E;
+import static dev.frtzhahn.micro8.ui.SevenSegmentCanvas.SEG_F;
+import static dev.frtzhahn.micro8.ui.SevenSegmentCanvas.SEG_G;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
