@@ -16,6 +16,11 @@ import edu.ucc.micro8.db.InstructionDef;
 import edu.ucc.micro8.db.IsaRepository;
 import edu.ucc.micro8.db.SnapshotRepository;
 import edu.ucc.micro8.db.WorkspaceSnapshot;
+import edu.ucc.micro8.lab.LabChallenge;
+import edu.ucc.micro8.lab.LabGradeReport;
+import edu.ucc.micro8.lab.LabGrader;
+import edu.ucc.micro8.lab.LabRepository;
+import edu.ucc.micro8.lab.LabTestResult;
 import javafx.animation.AnimationTimer;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -236,10 +241,19 @@ public final class MainWorkbenchController {
     private WebView webDatasheet;
 
     @FXML
+    private Button btnLoadLabStarter;
+
+    @FXML
     private Button btnRunLabGrader;
 
     @FXML
+    private TableView<LabChallenge> tblLabs;
+
+    @FXML
     private Label lblLabReport;
+
+    @FXML
+    private TableView<LabTestResult> tblLabResults;
 
     @FXML
     private Button btnClearRam;
@@ -259,12 +273,16 @@ public final class MainWorkbenchController {
     private final Circle[] binaryLedCircles = new Circle[8];
     private final ObservableList<TraceRow> traceItems = FXCollections.observableArrayList();
     private final ObservableList<MicrocodeStepRow> microcodeRows = FXCollections.observableArrayList();
+    private final ObservableList<LabChallenge> labItems = FXCollections.observableArrayList();
+    private final ObservableList<LabTestResult> labResultItems = FXCollections.observableArrayList();
     private final int[][] workingMicrocode = new int[6][4];
     private AnimationTimer uiTimer;
 
     private DatabaseManager dbManager;
     private IsaRepository isaRepository;
     private SnapshotRepository snapshotRepository;
+    private LabRepository labRepository;
+    private LabGrader labGrader;
     private final CpuCore cpuCore = new CpuCore();
     private final CpuClockRunner clockRunner = new CpuClockRunner(cpuCore);
     private final Assembler assembler = new Assembler();
@@ -292,6 +310,7 @@ public final class MainWorkbenchController {
         initRamHexGrid();
         initTraceTable();
         initMicrocodeDesigner();
+        initLabWorkbench();
         initSchematicView();
         startUiRefreshTimer();
         syncTransportControls();
@@ -1255,8 +1274,10 @@ public final class MainWorkbenchController {
         if (dbManager != null) {
             this.isaRepository = new IsaRepository(dbManager);
             this.snapshotRepository = new SnapshotRepository(dbManager);
+            this.labRepository = new LabRepository(dbManager);
+            this.labGrader = new LabGrader(this.isaRepository, this.labRepository);
             try {
-                this.isaRepository.initializeSchemaAndSeed();
+                this.labRepository.initializeSchemaAndSeed();
             } catch (SQLException ex) {
                 showDiagnosticsError("Schema initialization error: " + ex.getMessage());
             }
@@ -1264,7 +1285,184 @@ public final class MainWorkbenchController {
             rebuildInstructionMenu();
             loadInstructionIntoDesigner(0x20);
             handleRefreshDatasheet();
+            refreshLabTable(1);
             handleAssemble();
+        }
+    }
+
+    private void initLabWorkbench() {
+        if (tblLabs != null) {
+            TableColumn<LabChallenge, String> colId = new TableColumn<>("Lab #");
+            colId.setCellValueFactory(c -> new SimpleStringProperty("Lab #" + c.getValue().labId()));
+            colId.setPrefWidth(72.0);
+
+            TableColumn<LabChallenge, String> colTitle = new TableColumn<>("Challenge Title");
+            colTitle.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().title()));
+            colTitle.setPrefWidth(420.0);
+
+            TableColumn<LabChallenge, String> colStatus = new TableColumn<>("Status");
+            colStatus.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().statusText()));
+            colStatus.setPrefWidth(135.0);
+
+            tblLabs.getColumns().setAll(List.of(colId, colTitle, colStatus));
+            tblLabs.setItems(labItems);
+            tblLabs.getSelectionModel().selectedItemProperty().addListener((obs, oldLab, newLab) -> {
+                if (newLab != null && lblLabReport != null) {
+                    lblLabReport.getStyleClass().remove("diagnostics-error");
+                    lblLabReport.setText(newLab.title() + " - " + newLab.description());
+                }
+            });
+        }
+
+        if (tblLabResults != null) {
+            TableColumn<LabTestResult, String> colOrder = new TableColumn<>("Case #");
+            colOrder.setCellValueFactory(c -> new SimpleStringProperty("#" + c.getValue().caseOrder()));
+            colOrder.setPrefWidth(64.0);
+
+            TableColumn<LabTestResult, String> colDesc = new TableColumn<>("Description");
+            colDesc.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().description()));
+            colDesc.setPrefWidth(190.0);
+
+            TableColumn<LabTestResult, String> colExp = new TableColumn<>("Expected");
+            colExp.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().expectedSummary()));
+            colExp.setPrefWidth(145.0);
+
+            TableColumn<LabTestResult, String> colAct = new TableColumn<>("Actual");
+            colAct.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().actualSummary()));
+            colAct.setPrefWidth(145.0);
+
+            TableColumn<LabTestResult, String> colCycles = new TableColumn<>("Cycles");
+            colCycles.setCellValueFactory(c -> new SimpleStringProperty(String.valueOf(c.getValue().cyclesExecuted())));
+            colCycles.setPrefWidth(68.0);
+
+            TableColumn<LabTestResult, String> colDiag = new TableColumn<>("Result");
+            colDiag.setCellValueFactory(c -> new SimpleStringProperty(
+                    c.getValue().statusLabel() + " - " + c.getValue().diagnostic()
+            ));
+            colDiag.setPrefWidth(210.0);
+
+            tblLabResults.getColumns().setAll(List.of(colOrder, colDesc, colExp, colAct, colCycles, colDiag));
+            tblLabResults.setItems(labResultItems);
+        }
+    }
+
+    @FXML
+    public void handleLoadLabStarter() {
+        clockRunner.pause();
+        LabChallenge selected = tblLabs == null ? null : tblLabs.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            showLabReportError("Select a Lab Challenge from the table first.");
+            return;
+        }
+        boolean proceed = promptSaveSnapshotBeforeDestructiveAction(
+                "Loading starter code for " + selected.title()
+                        + " will wipe all 256 bytes of RAM, registers, flags, and DeltaJournal."
+        );
+        if (!proceed) {
+            return;
+        }
+        if (codeAsmEditor != null) {
+            codeAsmEditor.replaceText(selected.starterCode());
+        }
+        LabGrader.wipeToCleanSlate(cpuCore);
+        Arrays.fill(lastAssembledRam, (byte) 0);
+        programAssembled = false;
+        traceItems.clear();
+        labResultItems.clear();
+
+        CpuSnapshot snap;
+        synchronized (cpuCore) {
+            snap = cpuCore.createSnapshot();
+        }
+        renderSnapshot(snap);
+        syncTransportControls();
+        showLabReportSuccess("Loaded starter code for " + selected.title() + " on a Clean-Slate CPU.");
+        showDiagnosticsSuccess("Clean-Slate initialized for " + selected.title() + ".");
+    }
+
+    @FXML
+    public void handleRunLabGrader() {
+        clockRunner.pause();
+        if (labGrader == null || labRepository == null) {
+            showLabReportError("Lab grader is not initialized.");
+            return;
+        }
+        LabChallenge selected = tblLabs == null ? null : tblLabs.getSelectionModel().getSelectedItem();
+        if (selected == null && !labItems.isEmpty()) {
+            selected = labItems.getFirst();
+        }
+        if (selected == null) {
+            showLabReportError("Select a Lab Challenge from the table first.");
+            return;
+        }
+
+        boolean proceed = promptSaveSnapshotBeforeDestructiveAction(
+                "Grading " + selected.title()
+                        + " wipes all 256 bytes of RAM, registers, flags, and DeltaJournal before running deterministic test cases."
+        );
+        if (!proceed) {
+            return;
+        }
+
+        String source = codeAsmEditor == null ? "" : codeAsmEditor.getText();
+        try {
+            LabGradeReport report = labGrader.grade(selected, source, cpuCore);
+            labResultItems.setAll(report.caseResults());
+            refreshLabTable(selected.labId());
+
+            traceItems.clear();
+            CpuSnapshot snap;
+            synchronized (cpuCore) {
+                snap = cpuCore.createSnapshot();
+            }
+            renderSnapshot(snap);
+            syncTransportControls();
+
+            if (report.allPassed()) {
+                showLabReportSuccess(report.summaryMessage());
+                showDiagnosticsSuccess(report.summaryMessage());
+            } else {
+                showLabReportError(report.summaryMessage());
+                showDiagnosticsError(report.summaryMessage());
+            }
+        } catch (SQLException ex) {
+            showLabReportError("Lab grading error: " + ex.getMessage());
+        }
+    }
+
+    private void refreshLabTable(int selectLabId) {
+        if (labRepository == null) {
+            return;
+        }
+        try {
+            List<LabChallenge> labs = labRepository.listLabs();
+            labItems.setAll(labs);
+            if (tblLabs != null && !labs.isEmpty()) {
+                for (LabChallenge lab : labs) {
+                    if (lab.labId() == selectLabId) {
+                        tblLabs.getSelectionModel().select(lab);
+                        break;
+                    }
+                }
+            }
+        } catch (SQLException ex) {
+            showDiagnosticsError("Failed to load labs: " + ex.getMessage());
+        }
+    }
+
+    private void showLabReportSuccess(String msg) {
+        if (lblLabReport != null) {
+            lblLabReport.getStyleClass().remove("diagnostics-error");
+            lblLabReport.setText(msg);
+        }
+    }
+
+    private void showLabReportError(String msg) {
+        if (lblLabReport != null) {
+            if (!lblLabReport.getStyleClass().contains("diagnostics-error")) {
+                lblLabReport.getStyleClass().add("diagnostics-error");
+            }
+            lblLabReport.setText(msg);
         }
     }
 
