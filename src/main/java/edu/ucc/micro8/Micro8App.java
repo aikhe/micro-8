@@ -1,7 +1,10 @@
 package edu.ucc.micro8;
 
 import edu.ucc.micro8.db.DatabaseManager;
+import edu.ucc.micro8.db.IsaRepository;
+import edu.ucc.micro8.db.SnapshotRepository;
 import edu.ucc.micro8.ui.MainWorkbenchController;
+import edu.ucc.micro8.ui.OnboardingController;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -25,6 +28,7 @@ public final class Micro8App extends Application {
     public void start(Stage primaryStage) throws Exception {
         DatabaseManager dbManager = DatabaseManager.createDefault();
         dbManager.initialize();
+        new IsaRepository(dbManager).initializeSchemaAndSeed();
 
         URL fxmlUrl = Objects.requireNonNull(
                 getClass().getResource("/edu/ucc/micro8/ui/MainWorkbench.fxml"),
@@ -50,6 +54,11 @@ public final class Micro8App extends Application {
         primaryStage.setMinHeight(MIN_HEIGHT);
         primaryStage.setScene(scene);
         primaryStage.show();
+
+        SnapshotRepository snapshotRepository = new SnapshotRepository(dbManager);
+        if (!snapshotRepository.isOnboardingHidden()) {
+            OnboardingController.showModal(primaryStage, snapshotRepository);
+        }
     }
 
     @Override
