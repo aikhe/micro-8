@@ -438,6 +438,10 @@ public final class CpuCore {
         return cycleCount;
     }
 
+    public void setCycleCount(int cycleCount) {
+        this.cycleCount = Math.max(0, cycleCount);
+    }
+
     public int getLastBusValue() {
         return lastBusValue & 0xFF;
     }
