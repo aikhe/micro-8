@@ -21,6 +21,11 @@
     -fx-background-radius: 4px;
 }
 
+.scroll-pane {
+    -fx-background: #111318;
+    -fx-background-color: #111318;
+}
+
 .workbench-split {
     -fx-background-color: transparent;
 }
@@ -37,7 +42,7 @@
 }
 
 .section-header {
-    -fx-font-size: 12px;
+    -fx-font-size: 11px;
     -fx-font-weight: bold;
     -fx-text-fill: #94A3B8;
 }
@@ -162,6 +167,11 @@
     -fx-font-weight: bold;
 }
 
+.binary-led-circle {
+    -fx-stroke: #333A48;
+    -fx-stroke-width: 1.5px;
+}
+
 .led-off {
     -fx-fill: #2B1115;
     -fx-background-color: #2B1115;
@@ -178,7 +188,8 @@
     -fx-border-color: #2A2F3A;
     -fx-border-width: 1px;
     -fx-text-fill: #CBD5E1;
-    -fx-padding: 2px 4px 2px 4px;
+    -fx-padding: 1px 3px 1px 3px;
+    -fx-font-size: 11px;
 }
 
 .ram-cell-pc {
@@ -187,6 +198,7 @@
     -fx-border-width: 1px;
     -fx-text-fill: #00E5FF;
     -fx-font-weight: bold;
+    -fx-padding: 1px 4px 1px 4px;
 }
 
 .ram-cell-mar {
@@ -195,6 +207,7 @@
     -fx-border-width: 1px;
     -fx-text-fill: #FFD54F;
     -fx-font-weight: bold;
+    -fx-padding: 1px 4px 1px 4px;
 }
 
 .tstate-pill-active {
