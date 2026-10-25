@@ -1,6 +1,6 @@
-package edu.ucc.micro8.asm;
+package dev.frtzhahn.micro8.asm;
 
-import edu.ucc.micro8.db.InstructionDef;
+import dev.frtzhahn.micro8.db.InstructionDef;
 
 import java.util.ArrayList;
 import java.util.Arrays;
