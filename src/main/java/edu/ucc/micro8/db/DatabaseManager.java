@@ -1,5 +1,7 @@
 package edu.ucc.micro8.db;
 
+import edu.ucc.micro8.lab.LabRepository;
+
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -48,6 +50,7 @@ public final class DatabaseManager {
     public void initialize() throws SQLException {
         try (Connection conn = openConnection()) {
             new IsaRepository(this).initializeSchemaAndSeed(conn);
+            new LabRepository(this).seedLabsIfNeeded(conn);
         }
     }
 
