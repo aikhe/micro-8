@@ -1,4 +1,4 @@
-package edu.ucc.micro8.lab;
+package dev.frtzhahn.micro8.lab;
 
 import java.util.Objects;
 
