@@ -1,6 +1,6 @@
-package edu.ucc.micro8.ui;
+package dev.frtzhahn.micro8.ui;
 
-import edu.ucc.micro8.cpu.ControlSignals;
+import dev.frtzhahn.micro8.cpu.ControlSignals;
 
 /**
  * Mutable row model for a single T-state (T0..T5) in the Control-Store Microcode Designer table.
