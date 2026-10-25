@@ -450,6 +450,10 @@ public final class CpuCore {
         return latestSnapshot;
     }
 
+    public CpuSnapshot consumeLatestSnapshot() {
+        return latestSnapshot.getAndSet(null);
+    }
+
     public ConcurrentLinkedQueue<TraceRow> getTraceQueue() {
         return traceQueue;
     }
