@@ -92,14 +92,145 @@ public final class IsaRepository {
                 stmt.executeUpdate("DELETE FROM instructions;");
                 seedControlSignals(conn);
                 seedDefaultIsa(conn);
+                validateNoBusContention(conn);
                 conn.commit();
-            } catch (SQLException ex) {
+            } catch (SQLException | RuntimeException ex) {
                 conn.rollback();
                 throw ex;
             } finally {
                 conn.setAutoCommit(prevAutoCommit);
             }
         }
+    }
+
+    public void saveInstructionMicrocode(InstructionDef def, int[][] tStateFlagControlWords) throws SQLException {
+        Objects.requireNonNull(def, "def must not be null");
+        if (def.mnemonic() == null || def.mnemonic().isBlank()) {
+            throw new IllegalArgumentException("Instruction mnemonic must not be blank");
+        }
+        if (tStateFlagControlWords == null || tStateFlagControlWords.length != 6) {
+            throw new IllegalArgumentException("tStateFlagControlWords must be int[6][4]");
+        }
+        for (int t = 0; t < 6; t++) {
+            if (tStateFlagControlWords[t] == null || tStateFlagControlWords[t].length != 4) {
+                throw new IllegalArgumentException("tStateFlagControlWords[" + t + "] must have length 4");
+            }
+        }
+
+        int maskedOpcode = def.opcode() & 0xFF;
+        String cleanMnemonic = def.mnemonic().trim().toUpperCase();
+        String cleanDesc = def.description() == null ? "" : def.description().trim();
+
+        try (Connection conn = dbManager.openConnection()) {
+            boolean prevAutoCommit = conn.getAutoCommit();
+            conn.setAutoCommit(false);
+            try {
+                seedControlSignals(conn);
+
+                String upsertInstrSql = """
+                        INSERT INTO instructions (opcode, mnemonic, has_operand, is_builtin, description)
+                        VALUES (?, ?, ?, ?, ?)
+                        ON CONFLICT(opcode) DO UPDATE SET
+                            mnemonic = excluded.mnemonic,
+                            has_operand = excluded.has_operand,
+                            is_builtin = excluded.is_builtin,
+                            description = excluded.description
+                        """;
+                try (PreparedStatement ps = conn.prepareStatement(upsertInstrSql)) {
+                    ps.setInt(1, maskedOpcode);
+                    ps.setString(2, cleanMnemonic);
+                    ps.setInt(3, def.hasOperand() ? 1 : 0);
+                    ps.setInt(4, def.builtin() ? 1 : 0);
+                    ps.setString(5, cleanDesc);
+                    ps.executeUpdate();
+                }
+
+                try (PreparedStatement delSig = conn.prepareStatement("DELETE FROM microcode_step_signals WHERE opcode = ?;");
+                     PreparedStatement delSteps = conn.prepareStatement("DELETE FROM microcode_steps WHERE opcode = ?;")) {
+                    delSig.setInt(1, maskedOpcode);
+                    delSig.executeUpdate();
+                    delSteps.setInt(1, maskedOpcode);
+                    delSteps.executeUpdate();
+                }
+
+                String stepSql = """
+                        INSERT INTO microcode_steps (opcode, t_state, flag_state, control_word)
+                        VALUES (?, ?, ?, ?)
+                        """;
+                String sigSql = """
+                        INSERT INTO microcode_step_signals (opcode, t_state, flag_state, signal_id)
+                        VALUES (?, ?, ?, ?)
+                        """;
+                try (PreparedStatement stepPs = conn.prepareStatement(stepSql);
+                     PreparedStatement sigPs = conn.prepareStatement(sigSql)) {
+                    for (int t = 0; t < 6; t++) {
+                        for (int flag = 0; flag < 4; flag++) {
+                            int word = tStateFlagControlWords[t][flag];
+                            stepPs.setInt(1, maskedOpcode);
+                            stepPs.setInt(2, t);
+                            stepPs.setInt(3, flag);
+                            stepPs.setInt(4, word);
+                            stepPs.addBatch();
+
+                            for (SignalSpec spec : ControlSignals.ALL_SIGNALS) {
+                                if ((word & spec.mask()) != 0) {
+                                    sigPs.setInt(1, maskedOpcode);
+                                    sigPs.setInt(2, t);
+                                    sigPs.setInt(3, flag);
+                                    sigPs.setInt(4, spec.signalId());
+                                    sigPs.addBatch();
+                                }
+                            }
+                        }
+                    }
+                    stepPs.executeBatch();
+                    sigPs.executeBatch();
+                }
+
+                validateNoBusContention(conn);
+                conn.commit();
+            } catch (SQLException | RuntimeException ex) {
+                conn.rollback();
+                throw ex;
+            } finally {
+                conn.setAutoCommit(prevAutoCommit);
+            }
+        }
+    }
+
+    public int[][] loadInstructionSteps(int opcode) throws SQLException {
+        int maskedOpcode = opcode & 0xFF;
+        int[][] steps = new int[6][4];
+        int fetchT0 = CO | MI;
+        int fetchT1 = RO | II | CE;
+        int defaultT2 = CE | CLR;
+        for (int flag = 0; flag < 4; flag++) {
+            steps[0][flag] = fetchT0;
+            steps[1][flag] = fetchT1;
+            steps[2][flag] = defaultT2;
+        }
+
+        String sql = """
+                SELECT t_state, flag_state, control_word
+                FROM microcode_steps
+                WHERE opcode = ?
+                ORDER BY t_state ASC, flag_state ASC
+                """;
+        try (Connection conn = dbManager.openConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, maskedOpcode);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    int tState = rs.getInt("t_state");
+                    int flagState = rs.getInt("flag_state");
+                    int controlWord = rs.getInt("control_word");
+                    if (tState >= 0 && tState < 6 && flagState >= 0 && flagState < 4) {
+                        steps[tState][flagState] = controlWord;
+                    }
+                }
+            }
+        }
+        return steps;
     }
 
     public void validateNoBusContention() throws SQLException {
