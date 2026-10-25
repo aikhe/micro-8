@@ -1,11 +1,11 @@
-package edu.ucc.micro8.lab;
+package dev.frtzhahn.micro8.lab;
 
-import edu.ucc.micro8.asm.AssembledProgram;
-import edu.ucc.micro8.asm.Assembler;
-import edu.ucc.micro8.asm.SyntaxError;
-import edu.ucc.micro8.cpu.CpuCore;
-import edu.ucc.micro8.db.InstructionDef;
-import edu.ucc.micro8.db.IsaRepository;
+import dev.frtzhahn.micro8.asm.AssembledProgram;
+import dev.frtzhahn.micro8.asm.Assembler;
+import dev.frtzhahn.micro8.asm.SyntaxError;
+import dev.frtzhahn.micro8.cpu.CpuCore;
+import dev.frtzhahn.micro8.db.InstructionDef;
+import dev.frtzhahn.micro8.db.IsaRepository;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
