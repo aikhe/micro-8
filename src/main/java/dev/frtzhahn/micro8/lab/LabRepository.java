@@ -1,7 +1,7 @@
-package edu.ucc.micro8.lab;
+package dev.frtzhahn.micro8.lab;
 
-import edu.ucc.micro8.db.DatabaseManager;
-import edu.ucc.micro8.db.IsaRepository;
+import dev.frtzhahn.micro8.db.DatabaseManager;
+import dev.frtzhahn.micro8.db.IsaRepository;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
