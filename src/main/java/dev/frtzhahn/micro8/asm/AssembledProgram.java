@@ -1,4 +1,4 @@
-package edu.ucc.micro8.asm;
+package dev.frtzhahn.micro8.asm;
 
 import java.util.Arrays;
 import java.util.List;
