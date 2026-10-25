@@ -14,13 +14,20 @@ import edu.ucc.micro8.db.BusContentionException;
 import edu.ucc.micro8.db.DatabaseManager;
 import edu.ucc.micro8.db.InstructionDef;
 import edu.ucc.micro8.db.IsaRepository;
+import edu.ucc.micro8.db.SnapshotRepository;
+import edu.ucc.micro8.db.WorkspaceSnapshot;
 import javafx.animation.AnimationTimer;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuButton;
@@ -33,16 +40,21 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
 import javafx.scene.web.WebView;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import javafx.stage.Window;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
 import org.fxmisc.richtext.LineNumberFactory;
 import org.fxmisc.richtext.model.StyleSpans;
 import org.fxmisc.richtext.model.StyleSpansBuilder;
 
+import java.net.URL;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -252,6 +264,7 @@ public final class MainWorkbenchController {
 
     private DatabaseManager dbManager;
     private IsaRepository isaRepository;
+    private SnapshotRepository snapshotRepository;
     private final CpuCore cpuCore = new CpuCore();
     private final CpuClockRunner clockRunner = new CpuClockRunner(cpuCore);
     private final Assembler assembler = new Assembler();
@@ -1241,12 +1254,238 @@ public final class MainWorkbenchController {
         this.dbManager = dbManager;
         if (dbManager != null) {
             this.isaRepository = new IsaRepository(dbManager);
+            this.snapshotRepository = new SnapshotRepository(dbManager);
+            try {
+                this.isaRepository.initializeSchemaAndSeed();
+            } catch (SQLException ex) {
+                showDiagnosticsError("Schema initialization error: " + ex.getMessage());
+            }
             reloadIsaDefinitionsIfAvailable();
             rebuildInstructionMenu();
             loadInstructionIntoDesigner(0x20);
             handleRefreshDatasheet();
             handleAssemble();
         }
+    }
+
+    @FXML
+    public void handleHelpOnboarding() {
+        clockRunner.pause();
+        Window owner = btnHelpOnboarding == null || btnHelpOnboarding.getScene() == null
+                ? null
+                : btnHelpOnboarding.getScene().getWindow();
+        OnboardingController.showModal(owner, snapshotRepository);
+    }
+
+    @FXML
+    public void handleSnapshots() {
+        clockRunner.pause();
+        if (snapshotRepository == null) {
+            showDiagnosticsError("Snapshot repository is not initialized.");
+            return;
+        }
+
+        Window owner = btnSnapshots == null || btnSnapshots.getScene() == null
+                ? null
+                : btnSnapshots.getScene().getWindow();
+
+        Stage dialog = new Stage();
+        dialog.setTitle("MICRO-8 Workspace Snapshots");
+        if (owner != null) {
+            dialog.initOwner(owner);
+            dialog.initModality(Modality.WINDOW_MODAL);
+        }
+
+        ObservableList<WorkspaceSnapshot> snapshotItems = FXCollections.observableArrayList();
+        refreshSnapshotList(snapshotItems);
+
+        TextField txtName = new TextField("checkpoint-1");
+        txtName.setPrefWidth(220.0);
+        Button btnSave = new Button("Save Snapshot");
+        Label lblStatus = new Label("Save or restore full editor code, 256B RAM, and CPU registers.");
+        lblStatus.getStyleClass().add("diagnostics-banner");
+
+        TableView<WorkspaceSnapshot> tblSnapshots = new TableView<>(snapshotItems);
+        tblSnapshots.getStyleClass().add("workbench-table");
+
+        TableColumn<WorkspaceSnapshot, String> colName = new TableColumn<>("Name");
+        colName.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().name()));
+        colName.setPrefWidth(150.0);
+
+        TableColumn<WorkspaceSnapshot, String> colCreated = new TableColumn<>("Saved At (UTC)");
+        colCreated.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().createdAt()));
+        colCreated.setPrefWidth(195.0);
+
+        TableColumn<WorkspaceSnapshot, String> colPc = new TableColumn<>("PC");
+        colPc.setCellValueFactory(c -> new SimpleStringProperty(hex2(c.getValue().pc())));
+        colPc.setPrefWidth(60.0);
+
+        TableColumn<WorkspaceSnapshot, String> colRegA = new TableColumn<>("RegA");
+        colRegA.setCellValueFactory(c -> new SimpleStringProperty(hex2(c.getValue().regA())));
+        colRegA.setPrefWidth(60.0);
+
+        TableColumn<WorkspaceSnapshot, String> colOut = new TableColumn<>("OutReg");
+        colOut.setCellValueFactory(c -> new SimpleStringProperty(hex2(c.getValue().outReg())));
+        colOut.setPrefWidth(68.0);
+
+        TableColumn<WorkspaceSnapshot, String> colCycles = new TableColumn<>("Cycles");
+        colCycles.setCellValueFactory(c -> new SimpleStringProperty(String.valueOf(c.getValue().cycleCount())));
+        colCycles.setPrefWidth(72.0);
+
+        tblSnapshots.getColumns().setAll(List.of(colName, colCreated, colPc, colRegA, colOut, colCycles));
+        VBox.setVgrow(tblSnapshots, Priority.ALWAYS);
+
+        btnSave.setOnAction(e -> {
+            String rawName = txtName.getText() == null ? "" : txtName.getText().trim();
+            if (rawName.isEmpty()) {
+                lblStatus.setText("Snapshot name must not be empty.");
+                return;
+            }
+            try {
+                boolean allowOverwrite = false;
+                if (snapshotRepository.existsByName(rawName)) {
+                    Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+                    confirm.setTitle("Overwrite Workspace Snapshot");
+                    confirm.setHeaderText("Snapshot '" + rawName + "' already exists.");
+                    confirm.setContentText("Do you want to overwrite the existing snapshot?");
+                    Optional<ButtonType> choice = confirm.showAndWait();
+                    if (choice.isEmpty() || choice.get() != ButtonType.OK) {
+                        return;
+                    }
+                    allowOverwrite = true;
+                }
+                String asmText = codeAsmEditor == null ? "" : codeAsmEditor.getText();
+                WorkspaceSnapshot captured = snapshotRepository.captureFromCpu(rawName, asmText, cpuCore);
+                snapshotRepository.saveSnapshot(captured, allowOverwrite);
+                refreshSnapshotList(snapshotItems);
+                String msg = "Saved workspace snapshot '" + rawName + "'.";
+                lblStatus.setText(msg);
+                showDiagnosticsSuccess(msg);
+            } catch (SQLException | IllegalArgumentException | IllegalStateException ex) {
+                lblStatus.setText("Save error: " + ex.getMessage());
+            }
+        });
+
+        Button btnRestore = new Button("Restore Selected");
+        btnRestore.setOnAction(e -> {
+            WorkspaceSnapshot selected = tblSnapshots.getSelectionModel().getSelectedItem();
+            if (selected == null) {
+                lblStatus.setText("Select a snapshot from the table to restore.");
+                return;
+            }
+            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+            confirm.setTitle("Restore Workspace Snapshot");
+            confirm.setHeaderText("Restore snapshot '" + selected.name() + "'?");
+            confirm.setContentText("This will replace the current assembly editor code, 256B RAM, and CPU registers.");
+            Optional<ButtonType> choice = confirm.showAndWait();
+            if (choice.isEmpty() || choice.get() != ButtonType.OK) {
+                return;
+            }
+
+            if (codeAsmEditor != null) {
+                codeAsmEditor.replaceText(selected.assemblySource());
+            }
+            snapshotRepository.restoreIntoCpu(selected, cpuCore);
+            this.lastAssembledRam = selected.ramBlob();
+            this.programAssembled = true;
+            traceItems.clear();
+
+            CpuSnapshot snap;
+            synchronized (cpuCore) {
+                snap = cpuCore.createSnapshot();
+            }
+            renderSnapshot(snap);
+            syncTransportControls();
+            String msg = "Restored workspace snapshot '" + selected.name() + "'.";
+            lblStatus.setText(msg);
+            showDiagnosticsSuccess(msg);
+        });
+
+        Button btnDelete = new Button("Delete Selected");
+        btnDelete.setOnAction(e -> {
+            WorkspaceSnapshot selected = tblSnapshots.getSelectionModel().getSelectedItem();
+            if (selected == null) {
+                lblStatus.setText("Select a snapshot from the table to delete.");
+                return;
+            }
+            try {
+                snapshotRepository.deleteSnapshot(selected.name());
+                refreshSnapshotList(snapshotItems);
+                lblStatus.setText("Deleted snapshot '" + selected.name() + "'.");
+            } catch (SQLException ex) {
+                lblStatus.setText("Delete error: " + ex.getMessage());
+            }
+        });
+
+        HBox topRow = new HBox(8.0, new Label("Snapshot Name:"), txtName, btnSave);
+        topRow.setAlignment(Pos.CENTER_LEFT);
+
+        HBox bottomRow = new HBox(8.0, btnRestore, btnDelete);
+        bottomRow.setAlignment(Pos.CENTER_RIGHT);
+
+        VBox root = new VBox(10.0, topRow, tblSnapshots, lblStatus, bottomRow);
+        root.setPadding(new Insets(12.0));
+        root.getStyleClass().add("root-workbench");
+
+        Scene scene = new Scene(root, 640.0, 420.0);
+        URL cssUrl = getClass().getResource("/edu/ucc/micro8/ui/workbench.css");
+        if (cssUrl != null) {
+            scene.getStylesheets().add(cssUrl.toExternalForm());
+        }
+        dialog.setScene(scene);
+        dialog.showAndWait();
+    }
+
+    public boolean promptSaveSnapshotBeforeDestructiveAction(String contextMessage) {
+        if (snapshotRepository == null) {
+            return true;
+        }
+        ButtonType btnSaveAndContinue = new ButtonType("Save Snapshot & Continue", ButtonBar.ButtonData.YES);
+        ButtonType btnContinueWithoutSave = new ButtonType("Continue Without Saving", ButtonBar.ButtonData.NO);
+        ButtonType btnCancel = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+        Alert prompt = new Alert(
+                Alert.AlertType.CONFIRMATION,
+                contextMessage,
+                btnSaveAndContinue,
+                btnContinueWithoutSave,
+                btnCancel
+        );
+        prompt.setTitle("Clean-Slate Workspace Protection");
+        prompt.setHeaderText("Save a Workspace Snapshot before wiping RAM and registers?");
+
+        Optional<ButtonType> result = prompt.showAndWait();
+        if (result.isEmpty() || result.get() == btnCancel) {
+            return false;
+        }
+        if (result.get() == btnSaveAndContinue) {
+            String autoName = "pre-lab-" + System.currentTimeMillis();
+            try {
+                String asm = codeAsmEditor == null ? "" : codeAsmEditor.getText();
+                WorkspaceSnapshot snap = snapshotRepository.captureFromCpu(autoName, asm, cpuCore);
+                snapshotRepository.saveSnapshot(snap, true);
+                showDiagnosticsSuccess("Saved automatic snapshot '" + autoName + "'.");
+            } catch (SQLException ex) {
+                showDiagnosticsError("Failed to save snapshot: " + ex.getMessage());
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void refreshSnapshotList(ObservableList<WorkspaceSnapshot> target) {
+        if (snapshotRepository == null) {
+            return;
+        }
+        try {
+            target.setAll(snapshotRepository.listSnapshots());
+        } catch (SQLException ex) {
+            showDiagnosticsError("Failed to list snapshots: " + ex.getMessage());
+        }
+    }
+
+    public SnapshotRepository getSnapshotRepository() {
+        return snapshotRepository;
     }
 
     public void shutdown() {
