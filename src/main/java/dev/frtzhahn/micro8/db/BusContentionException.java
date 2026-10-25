@@ -1,4 +1,4 @@
-package edu.ucc.micro8.db;
+package dev.frtzhahn.micro8.db;
 
 import java.util.List;
 
