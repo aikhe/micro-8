@@ -1,0 +1,138 @@
+.root-workbench {
+    -fx-background-color: #111318;
+    -fx-font-family: "JetBrains Mono", "Consolas", "Monospace";
+    -fx-font-size: 12px;
+    -fx-text-fill: #E2E8F0;
+}
+
+.panel-card {
+    -fx-background-color: #1A1D24;
+    -fx-border-color: #2A2F3A;
+    -fx-border-width: 1px;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+}
+
+.panel-subcard {
+    -fx-background-color: #111318;
+    -fx-border-color: #2A2F3A;
+    -fx-border-width: 1px;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+}
+
+.workbench-split {
+    -fx-background-color: transparent;
+}
+
+.workbench-split > .split-pane-divider {
+    -fx-background-color: #2A2F3A;
+    -fx-padding: 0 2px 0 2px;
+}
+
+.workbench-title {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #00E5FF;
+}
+
+.section-header {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #94A3B8;
+}
+
+.diagnostics-banner {
+    -fx-background-color: #111318;
+    -fx-border-color: #2A2F3A;
+    -fx-border-width: 1px;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+    -fx-padding: 6px 8px 6px 8px;
+    -fx-text-fill: #00E676;
+}
+
+.label {
+    -fx-text-fill: #E2E8F0;
+}
+
+.button {
+    -fx-background-color: #242936;
+    -fx-border-color: #333A48;
+    -fx-border-width: 1px;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+    -fx-text-fill: #E2E8F0;
+    -fx-padding: 4px 10px 4px 10px;
+}
+
+.button:hover {
+    -fx-background-color: #2E3545;
+    -fx-border-color: #00E5FF;
+}
+
+.wire-idle {
+    -fx-stroke: #333A48;
+    -fx-text-fill: #64748B;
+}
+
+.wire-active-driver {
+    -fx-stroke: #00E5FF;
+    -fx-text-fill: #00E5FF;
+    -fx-font-weight: bold;
+}
+
+.wire-active-consumer {
+    -fx-stroke: #00E676;
+    -fx-text-fill: #00E676;
+    -fx-font-weight: bold;
+}
+
+.wire-contention-fault {
+    -fx-stroke: #FF1744;
+    -fx-text-fill: #FF1744;
+    -fx-font-weight: bold;
+}
+
+.led-off {
+    -fx-fill: #2B1115;
+    -fx-background-color: #2B1115;
+}
+
+.led-on {
+    -fx-fill: #FF2A3D;
+    -fx-background-color: #FF2A3D;
+    -fx-effect: dropshadow(gaussian, #FF2A3D, 8, 0.4, 0, 0);
+}
+
+.ram-cell {
+    -fx-background-color: #111318;
+    -fx-border-color: #2A2F3A;
+    -fx-border-width: 1px;
+    -fx-text-fill: #CBD5E1;
+    -fx-padding: 2px 4px 2px 4px;
+}
+
+.ram-cell-pc {
+    -fx-background-color: #082F38;
+    -fx-border-color: #00B8D4;
+    -fx-border-width: 1px;
+    -fx-text-fill: #00E5FF;
+    -fx-font-weight: bold;
+}
+
+.ram-cell-mar {
+    -fx-background-color: #332400;
+    -fx-border-color: #FFB300;
+    -fx-border-width: 1px;
+    -fx-text-fill: #FFD54F;
+    -fx-font-weight: bold;
+}
+
+.tstate-pill-active {
+    -fx-background-color: #2979FF;
+    -fx-background-radius: 4px;
+    -fx-padding: 2px 6px 2px 6px;
+    -fx-text-fill: #FFFFFF;
+    -fx-font-weight: bold;
+}
