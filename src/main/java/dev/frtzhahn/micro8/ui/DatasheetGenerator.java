@@ -1,8 +1,8 @@
-package edu.ucc.micro8.ui;
+package dev.frtzhahn.micro8.ui;
 
-import edu.ucc.micro8.cpu.ControlSignals;
-import edu.ucc.micro8.cpu.ControlSignals.SignalSpec;
-import edu.ucc.micro8.db.InstructionDef;
+import dev.frtzhahn.micro8.cpu.ControlSignals;
+import dev.frtzhahn.micro8.cpu.ControlSignals.SignalSpec;
+import dev.frtzhahn.micro8.db.InstructionDef;
 
 import java.util.ArrayList;
 import java.util.Comparator;
