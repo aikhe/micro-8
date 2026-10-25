@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import edu.ucc.micro8.ui.SevenSegmentCanvas?>
+<?import dev.frtzhahn.micro8.ui.SevenSegmentCanvas?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.CheckBox?>
@@ -26,7 +26,7 @@
 
 <BorderPane xmlns="http://javafx.com/javafx/25"
             xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="edu.ucc.micro8.ui.MainWorkbenchController"
+            fx:controller="dev.frtzhahn.micro8.ui.MainWorkbenchController"
             styleClass="root-workbench"
             prefWidth="1440.0" prefHeight="900.0">
 
