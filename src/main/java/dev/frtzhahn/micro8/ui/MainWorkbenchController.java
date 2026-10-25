@@ -44,6 +44,9 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.control.Tooltip;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
@@ -312,8 +315,88 @@ public final class MainWorkbenchController {
         initMicrocodeDesigner();
         initLabWorkbench();
         initSchematicView();
+        initTooltips();
+        initKeyboardShortcuts();
         startUiRefreshTimer();
         syncTransportControls();
+    }
+
+    private void initTooltips() {
+        if (btnAssemble != null) {
+            btnAssemble.setTooltip(new Tooltip("Assemble source code into 256-byte RAM (F5)"));
+        }
+        if (btnRun != null) {
+            btnRun.setTooltip(new Tooltip("Start background clock execution (F8)"));
+        }
+        if (btnPause != null) {
+            btnPause.setTooltip(new Tooltip("Pause clock execution (F8)"));
+        }
+        if (btnStepMicro != null) {
+            btnStepMicro.setTooltip(new Tooltip("Single micro-step T0-T5 clock tick (F6)"));
+        }
+        if (btnStepMacro != null) {
+            btnStepMacro.setTooltip(new Tooltip("Single macro-step full instruction execution (F7)"));
+        }
+        if (btnUndoMicro != null) {
+            btnUndoMicro.setTooltip(new Tooltip("Undo single micro-step using DeltaJournal (F9)"));
+        }
+        if (btnUndoMacro != null) {
+            btnUndoMacro.setTooltip(new Tooltip("Undo single macro-step using DeltaJournal (F10)"));
+        }
+        if (btnReset != null) {
+            btnReset.setTooltip(new Tooltip("Reset CPU registers, sequencer, and DeltaJournal (Ctrl+R)"));
+        }
+        if (btnSnapshots != null) {
+            btnSnapshots.setTooltip(new Tooltip("Manage workspace snapshots (save & restore)"));
+        }
+        if (btnHelpOnboarding != null) {
+            btnHelpOnboarding.setTooltip(new Tooltip("Open interactive 4-slide onboarding guide"));
+        }
+    }
+
+    private void initKeyboardShortcuts() {
+        if (btnRun == null) {
+            return;
+        }
+        if (btnRun.getScene() != null) {
+            installKeyboardShortcuts(btnRun.getScene());
+        }
+        btnRun.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                installKeyboardShortcuts(newScene);
+            }
+        });
+    }
+
+    private void installKeyboardShortcuts(Scene scene) {
+        scene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+            if (event.getCode() == KeyCode.F5) {
+                handleAssemble();
+                event.consume();
+            } else if (event.getCode() == KeyCode.F6) {
+                handleStepMicro();
+                event.consume();
+            } else if (event.getCode() == KeyCode.F7) {
+                handleStepMacro();
+                event.consume();
+            } else if (event.getCode() == KeyCode.F8) {
+                if (clockRunner.isRunning()) {
+                    handlePause();
+                } else {
+                    handleRun();
+                }
+                event.consume();
+            } else if (event.getCode() == KeyCode.F9) {
+                handleUndoMicro();
+                event.consume();
+            } else if (event.getCode() == KeyCode.F10) {
+                handleUndoMacro();
+                event.consume();
+            } else if (event.isControlDown() && event.getCode() == KeyCode.R) {
+                handleReset();
+                event.consume();
+            }
+        });
     }
 
     private void initSymbolTable() {
