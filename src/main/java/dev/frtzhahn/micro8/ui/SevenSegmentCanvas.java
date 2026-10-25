@@ -1,4 +1,4 @@
-package edu.ucc.micro8.ui;
+package dev.frtzhahn.micro8.ui;
 
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
