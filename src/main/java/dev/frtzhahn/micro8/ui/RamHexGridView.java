@@ -1,6 +1,6 @@
-package edu.ucc.micro8.ui;
+package dev.frtzhahn.micro8.ui;
 
-import edu.ucc.micro8.cpu.TraceRow;
+import dev.frtzhahn.micro8.cpu.TraceRow;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextInputDialog;
