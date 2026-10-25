@@ -52,6 +52,11 @@
     -fx-text-fill: #00E676;
 }
 
+.diagnostics-error {
+    -fx-border-color: #FF1744;
+    -fx-text-fill: #FF5252;
+}
+
 .label {
     -fx-text-fill: #E2E8F0;
 }
@@ -69,6 +74,69 @@
 .button:hover {
     -fx-background-color: #2E3545;
     -fx-border-color: #00E5FF;
+}
+
+.code-editor {
+    -fx-background-color: #111318;
+    -fx-font-family: "JetBrains Mono", "Consolas", "Monospace";
+    -fx-font-size: 13px;
+}
+
+.code-editor .text {
+    -fx-fill: #E2E8F0;
+}
+
+.code-editor .lineno {
+    -fx-background-color: #161920;
+    -fx-text-fill: #64748B;
+    -fx-padding: 0 8px 0 6px;
+}
+
+.code-editor .caret {
+    -fx-stroke: #00E5FF;
+}
+
+.asm-mnemonic {
+    -fx-fill: #00E5FF;
+    -fx-font-weight: bold;
+}
+
+.asm-directive {
+    -fx-fill: #CE93D8;
+    -fx-font-weight: bold;
+}
+
+.asm-label {
+    -fx-fill: #FFD54F;
+    -fx-font-weight: bold;
+}
+
+.asm-number {
+    -fx-fill: #00E676;
+}
+
+.asm-comment {
+    -fx-fill: #64748B;
+    -fx-font-style: italic;
+}
+
+.asm-active-line {
+    -fx-background-color: #1E3A5F;
+}
+
+.workbench-table {
+    -fx-background-color: #111318;
+    -fx-border-color: #2A2F3A;
+    -fx-border-width: 1px;
+}
+
+.workbench-table .column-header-background {
+    -fx-background-color: #1A1D24;
+}
+
+.workbench-table .table-row-cell {
+    -fx-background-color: #111318;
+    -fx-text-fill: #E2E8F0;
 }
 
 .wire-idle {
