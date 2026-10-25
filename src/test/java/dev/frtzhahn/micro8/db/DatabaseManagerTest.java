@@ -1,4 +1,4 @@
-package edu.ucc.micro8.db;
+package dev.frtzhahn.micro8.db;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
