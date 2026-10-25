@@ -4,11 +4,15 @@ import edu.ucc.micro8.asm.AssembledProgram;
 import edu.ucc.micro8.asm.Assembler;
 import edu.ucc.micro8.asm.SymbolEntry;
 import edu.ucc.micro8.asm.SyntaxError;
+import edu.ucc.micro8.cpu.ControlSignals;
+import edu.ucc.micro8.cpu.ControlSignals.SignalSpec;
 import edu.ucc.micro8.cpu.CpuClockRunner;
 import edu.ucc.micro8.cpu.CpuCore;
 import edu.ucc.micro8.cpu.CpuSnapshot;
 import edu.ucc.micro8.cpu.TraceRow;
+import edu.ucc.micro8.db.BusContentionException;
 import edu.ucc.micro8.db.DatabaseManager;
+import edu.ucc.micro8.db.InstructionDef;
 import edu.ucc.micro8.db.IsaRepository;
 import javafx.animation.AnimationTimer;
 import javafx.beans.property.SimpleStringProperty;
@@ -17,15 +21,22 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.Slider;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
+import javafx.scene.web.WebView;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
 import org.fxmisc.richtext.LineNumberFactory;
@@ -33,6 +44,7 @@ import org.fxmisc.richtext.model.StyleSpans;
 import org.fxmisc.richtext.model.StyleSpansBuilder;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -164,6 +176,39 @@ public final class MainWorkbenchController {
     private Label lblTState;
 
     @FXML
+    private MenuButton btnSelectInstruction;
+
+    @FXML
+    private TextField txtOpcodeHex;
+
+    @FXML
+    private TextField txtMnemonic;
+
+    @FXML
+    private CheckBox chkHasOperand;
+
+    @FXML
+    private TextField txtInstrDesc;
+
+    @FXML
+    private ToggleButton btnFlagAll;
+
+    @FXML
+    private ToggleButton btnFlag0;
+
+    @FXML
+    private ToggleButton btnFlag1;
+
+    @FXML
+    private ToggleButton btnFlag2;
+
+    @FXML
+    private ToggleButton btnFlag3;
+
+    @FXML
+    private TableView<MicrocodeStepRow> tblMicrocode;
+
+    @FXML
     private Label lblMicrocodeValidation;
 
     @FXML
@@ -174,6 +219,9 @@ public final class MainWorkbenchController {
 
     @FXML
     private Button btnRefreshDatasheet;
+
+    @FXML
+    private WebView webDatasheet;
 
     @FXML
     private Button btnRunLabGrader;
@@ -198,6 +246,8 @@ public final class MainWorkbenchController {
     private RamHexGridView ramGridView;
     private final Circle[] binaryLedCircles = new Circle[8];
     private final ObservableList<TraceRow> traceItems = FXCollections.observableArrayList();
+    private final ObservableList<MicrocodeStepRow> microcodeRows = FXCollections.observableArrayList();
+    private final int[][] workingMicrocode = new int[6][4];
     private AnimationTimer uiTimer;
 
     private DatabaseManager dbManager;
@@ -228,6 +278,7 @@ public final class MainWorkbenchController {
         initBinaryLeds();
         initRamHexGrid();
         initTraceTable();
+        initMicrocodeDesigner();
         initSchematicView();
         startUiRefreshTimer();
         syncTransportControls();
@@ -364,6 +415,384 @@ public final class MainWorkbenchController {
                 colCycle, colTState, colPc, colOp, colBus, colRegA, colRegB, colMar, colFlags, colOutDec, colOutHex, colOutAsc
         ));
         tblTrace.setItems(traceItems);
+    }
+
+    private void initMicrocodeDesigner() {
+        int fetchT0 = ControlSignals.CO | ControlSignals.MI;
+        int fetchT1 = ControlSignals.RO | ControlSignals.II | ControlSignals.CE;
+        int defaultT2 = ControlSignals.CE | ControlSignals.CLR;
+        for (int flag = 0; flag < 4; flag++) {
+            workingMicrocode[0][flag] = fetchT0;
+            workingMicrocode[1][flag] = fetchT1;
+            workingMicrocode[2][flag] = defaultT2;
+            workingMicrocode[3][flag] = 0;
+            workingMicrocode[4][flag] = 0;
+            workingMicrocode[5][flag] = 0;
+        }
+        microcodeRows.clear();
+        for (int t = 0; t < 6; t++) {
+            microcodeRows.add(new MicrocodeStepRow(t, workingMicrocode[t][0]));
+        }
+
+        if (tblMicrocode == null) {
+            return;
+        }
+
+        List<SignalSpec> driverSpecs = ControlSignals.ALL_SIGNALS.stream()
+                .filter(SignalSpec::busDriver)
+                .toList();
+        List<SignalSpec> consumerSpecs = ControlSignals.ALL_SIGNALS.stream()
+                .filter(s -> !s.busDriver())
+                .toList();
+
+        TableColumn<MicrocodeStepRow, String> colPhase = new TableColumn<>("Phase");
+        colPhase.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getTStateLabel()));
+        colPhase.setPrefWidth(56.0);
+
+        TableColumn<MicrocodeStepRow, String> colDrivers = new TableColumn<>("Bus Driver (Max 1: RO, AO, BO, EO, CO)");
+        colDrivers.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getHexWord()));
+        colDrivers.setCellFactory(col -> createSignalCheckboxCell(driverSpecs, true));
+        colDrivers.setPrefWidth(250.0);
+
+        TableColumn<MicrocodeStepRow, String> colConsumers = new TableColumn<>("Latch / Control Signals (12 Wires)");
+        colConsumers.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getHexWord()));
+        colConsumers.setCellFactory(col -> createSignalCheckboxCell(consumerSpecs, false));
+        colConsumers.setPrefWidth(480.0);
+
+        TableColumn<MicrocodeStepRow, String> colWord = new TableColumn<>("Control Word");
+        colWord.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getHexWord()));
+        colWord.setPrefWidth(105.0);
+
+        tblMicrocode.getColumns().setAll(List.of(colPhase, colDrivers, colConsumers, colWord));
+        tblMicrocode.setItems(microcodeRows);
+        updateLiveMicrocodeValidation();
+    }
+
+    private TableCell<MicrocodeStepRow, String> createSignalCheckboxCell(List<SignalSpec> specs, boolean isDriverGroup) {
+        return new TableCell<>() {
+            private final HBox box = new HBox(6.0);
+            private final List<CheckBox> checkBoxes = new ArrayList<>(specs.size());
+            private boolean updating;
+
+            {
+                box.setAlignment(Pos.CENTER_LEFT);
+                for (SignalSpec spec : specs) {
+                    CheckBox cb = new CheckBox(spec.name());
+                    cb.setOnAction(e -> {
+                        if (updating) {
+                            return;
+                        }
+                        MicrocodeStepRow row = getTableRow() == null ? null : getTableRow().getItem();
+                        if (row == null) {
+                            return;
+                        }
+                        row.setSignal(spec.mask(), cb.isSelected());
+                        applyRowToWorkingMatrix(row.getTState(), row.getControlWord());
+                        if (tblMicrocode != null) {
+                            tblMicrocode.refresh();
+                        }
+                        updateLiveMicrocodeValidation();
+                    });
+                    checkBoxes.add(cb);
+                    box.getChildren().add(cb);
+                }
+            }
+
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                MicrocodeStepRow row = getTableRow() == null ? null : getTableRow().getItem();
+                if (empty || row == null) {
+                    setGraphic(null);
+                    return;
+                }
+                updating = true;
+                boolean contention = row.hasBusContention();
+                for (int i = 0; i < specs.size(); i++) {
+                    SignalSpec spec = specs.get(i);
+                    CheckBox cb = checkBoxes.get(i);
+                    boolean active = row.isSignalSet(spec.mask());
+                    cb.setSelected(active);
+                    cb.getStyleClass().removeAll("wire-active-driver", "wire-active-consumer", "wire-contention-fault");
+                    if (active) {
+                        if (isDriverGroup && contention) {
+                            cb.getStyleClass().add("wire-contention-fault");
+                        } else if (isDriverGroup) {
+                            cb.getStyleClass().add("wire-active-driver");
+                        } else {
+                            cb.getStyleClass().add("wire-active-consumer");
+                        }
+                    }
+                }
+                updating = false;
+                setGraphic(box);
+            }
+        };
+    }
+
+    private void applyRowToWorkingMatrix(int tState, int controlWord) {
+        int selectedFlag = getSelectedFlagVariant();
+        if (selectedFlag < 0) {
+            for (int flag = 0; flag < 4; flag++) {
+                workingMicrocode[tState][flag] = controlWord;
+            }
+        } else {
+            workingMicrocode[tState][selectedFlag] = controlWord;
+        }
+    }
+
+    private int getSelectedFlagVariant() {
+        if (btnFlag0 != null && btnFlag0.isSelected()) {
+            return 0;
+        }
+        if (btnFlag1 != null && btnFlag1.isSelected()) {
+            return 1;
+        }
+        if (btnFlag2 != null && btnFlag2.isSelected()) {
+            return 2;
+        }
+        if (btnFlag3 != null && btnFlag3.isSelected()) {
+            return 3;
+        }
+        return -1;
+    }
+
+    @FXML
+    public void handleFlagVariantChanged() {
+        int flag = Math.max(0, getSelectedFlagVariant());
+        for (int t = 0; t < 6; t++) {
+            if (t < microcodeRows.size()) {
+                microcodeRows.get(t).setControlWord(workingMicrocode[t][flag]);
+            }
+        }
+        if (tblMicrocode != null) {
+            tblMicrocode.refresh();
+        }
+        updateLiveMicrocodeValidation();
+    }
+
+    @FXML
+    public void handleSaveMicrocode() {
+        clockRunner.pause();
+        if (isaRepository == null) {
+            showMicrocodeValidationError("Database repository is not initialized.");
+            return;
+        }
+        try {
+            int opcode = parseHexOpcodeField();
+            String mnemonic = txtMnemonic == null ? "" : txtMnemonic.getText().trim().toUpperCase(Locale.ROOT);
+            if (mnemonic.isEmpty()) {
+                throw new IllegalArgumentException("Mnemonic must not be empty.");
+            }
+            boolean hasOperand = chkHasOperand != null && chkHasOperand.isSelected();
+            String desc = txtInstrDesc == null ? "" : txtInstrDesc.getText().trim();
+
+            boolean builtin = false;
+            for (InstructionDef existing : isaRepository.listInstructions()) {
+                if ((existing.opcode() & 0xFF) == opcode) {
+                    builtin = existing.builtin();
+                    break;
+                }
+            }
+
+            InstructionDef def = new InstructionDef(opcode, mnemonic, hasOperand, builtin, desc);
+            isaRepository.saveInstructionMicrocode(def, workingMicrocode);
+
+            reloadIsaDefinitionsIfAvailable();
+            rebuildInstructionMenu();
+            handleRefreshDatasheet();
+            if (codeAsmEditor != null) {
+                codeAsmEditor.setStyleSpans(0, computeHighlighting(codeAsmEditor.getText()));
+            }
+            String msg = "Saved instruction " + hex2(opcode) + " (" + mnemonic + ") and recompiled control store.";
+            showMicrocodeValidationSuccess("OK - " + msg);
+            showDiagnosticsSuccess(msg);
+        } catch (BusContentionException | IllegalArgumentException | SQLException ex) {
+            showMicrocodeValidationError(ex.getMessage());
+            showDiagnosticsError(ex.getMessage());
+        }
+    }
+
+    @FXML
+    public void handleResetDefaultIsa() {
+        clockRunner.pause();
+        if (isaRepository == null) {
+            return;
+        }
+        try {
+            isaRepository.resetToDefaultIsa();
+            reloadIsaDefinitionsIfAvailable();
+            rebuildInstructionMenu();
+            loadInstructionIntoDesigner(0x20);
+            handleRefreshDatasheet();
+            if (codeAsmEditor != null) {
+                codeAsmEditor.setStyleSpans(0, computeHighlighting(codeAsmEditor.getText()));
+            }
+            String msg = "Reset SQLite control store to default 11 built-in instructions.";
+            showMicrocodeValidationSuccess("OK - " + msg);
+            showDiagnosticsSuccess(msg);
+        } catch (SQLException | BusContentionException ex) {
+            showMicrocodeValidationError("Reset failed: " + ex.getMessage());
+            showDiagnosticsError("Reset failed: " + ex.getMessage());
+        }
+    }
+
+    @FXML
+    public void handleRefreshDatasheet() {
+        if (isaRepository == null || webDatasheet == null) {
+            return;
+        }
+        try {
+            List<InstructionDef> instructions = isaRepository.listInstructions();
+            int[][][] store = isaRepository.compileControlStore();
+            String html = DatasheetGenerator.generateHtml(instructions, store);
+            webDatasheet.getEngine().loadContent(html, "text/html");
+        } catch (SQLException | BusContentionException ex) {
+            showDiagnosticsError("Datasheet generation failed: " + ex.getMessage());
+        }
+    }
+
+    private void rebuildInstructionMenu() {
+        if (btnSelectInstruction == null || isaRepository == null) {
+            return;
+        }
+        try {
+            List<InstructionDef> instructions = isaRepository.listInstructions();
+            btnSelectInstruction.getItems().clear();
+            for (InstructionDef def : instructions) {
+                String label = hex2(def.opcode()) + " - " + def.mnemonic()
+                        + (def.builtin() ? " (Built-in)" : " (Custom)");
+                MenuItem item = new MenuItem(label);
+                item.setOnAction(e -> loadInstructionIntoDesigner(def.opcode()));
+                btnSelectInstruction.getItems().add(item);
+            }
+            MenuItem customItem = new MenuItem("New Custom Instruction (0x60)");
+            customItem.setOnAction(e -> prepareNewCustomInstruction(0x60));
+            btnSelectInstruction.getItems().add(customItem);
+        } catch (SQLException ex) {
+            showDiagnosticsError("Failed to list instructions: " + ex.getMessage());
+        }
+    }
+
+    private void loadInstructionIntoDesigner(int opcode) {
+        if (isaRepository == null) {
+            return;
+        }
+        int masked = opcode & 0xFF;
+        try {
+            InstructionDef matched = null;
+            for (InstructionDef def : isaRepository.listInstructions()) {
+                if ((def.opcode() & 0xFF) == masked) {
+                    matched = def;
+                    break;
+                }
+            }
+            int[][] steps = isaRepository.loadInstructionSteps(masked);
+            for (int t = 0; t < 6; t++) {
+                System.arraycopy(steps[t], 0, workingMicrocode[t], 0, 4);
+            }
+            if (matched != null) {
+                if (txtOpcodeHex != null) {
+                    txtOpcodeHex.setText(hex2(matched.opcode()));
+                }
+                if (txtMnemonic != null) {
+                    txtMnemonic.setText(matched.mnemonic());
+                }
+                if (chkHasOperand != null) {
+                    chkHasOperand.setSelected(matched.hasOperand());
+                }
+                if (txtInstrDesc != null) {
+                    txtInstrDesc.setText(matched.description());
+                }
+            }
+            handleFlagVariantChanged();
+        } catch (SQLException ex) {
+            showMicrocodeValidationError("Failed to load instruction steps: " + ex.getMessage());
+        }
+    }
+
+    private void prepareNewCustomInstruction(int defaultOpcode) {
+        int fetchT0 = ControlSignals.CO | ControlSignals.MI;
+        int fetchT1 = ControlSignals.RO | ControlSignals.II | ControlSignals.CE;
+        int defaultT2 = ControlSignals.CE | ControlSignals.CLR;
+        for (int flag = 0; flag < 4; flag++) {
+            workingMicrocode[0][flag] = fetchT0;
+            workingMicrocode[1][flag] = fetchT1;
+            workingMicrocode[2][flag] = defaultT2;
+            workingMicrocode[3][flag] = 0;
+            workingMicrocode[4][flag] = 0;
+            workingMicrocode[5][flag] = 0;
+        }
+        if (txtOpcodeHex != null) {
+            txtOpcodeHex.setText(hex2(defaultOpcode));
+        }
+        if (txtMnemonic != null) {
+            txtMnemonic.setText("DEC");
+        }
+        if (chkHasOperand != null) {
+            chkHasOperand.setSelected(false);
+        }
+        if (txtInstrDesc != null) {
+            txtInstrDesc.setText("Custom student microcoded instruction");
+        }
+        handleFlagVariantChanged();
+    }
+
+    private int parseHexOpcodeField() {
+        String raw = txtOpcodeHex == null ? "" : txtOpcodeHex.getText().trim();
+        if (raw.startsWith("0x") || raw.startsWith("0X")) {
+            raw = raw.substring(2);
+        } else if (raw.startsWith("$")) {
+            raw = raw.substring(1);
+        }
+        if (raw.isEmpty()) {
+            throw new IllegalArgumentException("Opcode hex value must not be empty.");
+        }
+        try {
+            int val = Integer.parseInt(raw, 16);
+            if (val < 0 || val > 0xFF) {
+                throw new IllegalArgumentException("Opcode must be between 0x00 and 0xFF.");
+            }
+            return val & 0xFF;
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException("Invalid hex opcode: '" + raw + "' (expected 0x00..0xFF).");
+        }
+    }
+
+    private void updateLiveMicrocodeValidation() {
+        for (int t = 0; t < 6; t++) {
+            for (int flag = 0; flag < 4; flag++) {
+                int word = workingMicrocode[t][flag];
+                if (ControlSignals.hasBusContention(word)) {
+                    List<String> drivers = ControlSignals.ALL_SIGNALS.stream()
+                            .filter(s -> s.busDriver() && (word & s.mask()) != 0)
+                            .map(SignalSpec::name)
+                            .toList();
+                    showMicrocodeValidationError(
+                            "Bus contention in T" + t + " (flagState=" + flag + "): multiple bus drivers active ["
+                                    + String.join(", ", drivers) + "]"
+                    );
+                    return;
+                }
+            }
+        }
+        showMicrocodeValidationSuccess("OK - Zero Bus Contention Detected");
+    }
+
+    private void showMicrocodeValidationSuccess(String msg) {
+        if (lblMicrocodeValidation != null) {
+            lblMicrocodeValidation.getStyleClass().remove("diagnostics-error");
+            lblMicrocodeValidation.setText(msg);
+        }
+    }
+
+    private void showMicrocodeValidationError(String msg) {
+        if (lblMicrocodeValidation != null) {
+            if (!lblMicrocodeValidation.getStyleClass().contains("diagnostics-error")) {
+                lblMicrocodeValidation.getStyleClass().add("diagnostics-error");
+            }
+            lblMicrocodeValidation.setText(msg);
+        }
     }
 
     private void initSchematicView() {
@@ -794,9 +1223,14 @@ public final class MainWorkbenchController {
             return;
         }
         try {
-            assembler.updateInstructions(isaRepository.listInstructions());
+            List<InstructionDef> defs = isaRepository.listInstructions();
+            assembler.updateInstructions(defs);
+            int[][][] compiled = isaRepository.compileControlStore();
             synchronized (cpuCore) {
-                cpuCore.setControlStore(isaRepository.compileControlStore());
+                cpuCore.setControlStore(compiled);
+                for (InstructionDef def : defs) {
+                    cpuCore.setMnemonic(def.opcode(), def.mnemonic());
+                }
             }
         } catch (SQLException ex) {
             showDiagnosticsError("Database error loading ISA: " + ex.getMessage());
@@ -808,6 +1242,9 @@ public final class MainWorkbenchController {
         if (dbManager != null) {
             this.isaRepository = new IsaRepository(dbManager);
             reloadIsaDefinitionsIfAvailable();
+            rebuildInstructionMenu();
+            loadInstructionIntoDesigner(0x20);
+            handleRefreshDatasheet();
             handleAssemble();
         }
     }
