@@ -19,6 +19,8 @@ public final class Micro8App extends Application {
     private static final double MIN_WIDTH = 1280.0;
     private static final double MIN_HEIGHT = 800.0;
 
+    private MainWorkbenchController controller;
+
     @Override
     public void start(Stage primaryStage) throws Exception {
         DatabaseManager dbManager = DatabaseManager.createDefault();
@@ -31,7 +33,7 @@ public final class Micro8App extends Application {
         FXMLLoader loader = new FXMLLoader(fxmlUrl);
         Parent root = loader.load();
 
-        MainWorkbenchController controller = loader.getController();
+        controller = loader.getController();
         if (controller != null) {
             controller.setDatabaseManager(dbManager);
         }
@@ -48,5 +50,12 @@ public final class Micro8App extends Application {
         primaryStage.setMinHeight(MIN_HEIGHT);
         primaryStage.setScene(scene);
         primaryStage.show();
+    }
+
+    @Override
+    public void stop() {
+        if (controller != null) {
+            controller.shutdown();
+        }
     }
 }
