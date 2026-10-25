@@ -17,6 +17,7 @@
 <?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.control.ToggleGroup?>
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Priority?>
 <?import javafx.scene.layout.Region?>
@@ -96,26 +97,44 @@
                         <padding>
                             <Insets top="10.0" right="10.0" bottom="10.0" left="10.0"/>
                         </padding>
-                        <HBox spacing="14.0" alignment="CENTER_LEFT">
-                            <Label text="BUS:"/>
-                            <Label fx:id="lblBusValue" text="0x00" styleClass="wire-active-driver"/>
-                            <Label text="T-STATE:"/>
-                            <Label fx:id="lblTState" text="T0" styleClass="tstate-pill-active"/>
-                            <Label text="FLAGS:"/>
-                            <Label fx:id="lblFlags" text="Z:0 C:0"/>
-                            <Label text="PC:"/>
-                            <Label fx:id="lblPc" text="0x00"/>
-                            <Label text="MAR:"/>
-                            <Label fx:id="lblMar" text="0x00"/>
-                            <Label text="IR:"/>
-                            <Label fx:id="lblIr" text="0x00"/>
-                            <Label text="REG A:"/>
-                            <Label fx:id="lblRegA" text="0x00"/>
-                            <Label text="REG B:"/>
-                            <Label fx:id="lblRegB" text="0x00"/>
-                            <Label text="ALU:"/>
-                            <Label fx:id="lblAlu" text="0x00"/>
-                        </HBox>
+                        <FlowPane hgap="12.0" vgap="6.0" alignment="CENTER_LEFT">
+                            <HBox spacing="4.0" alignment="CENTER_LEFT">
+                                <Label text="BUS:" styleClass="section-header" minWidth="-Infinity"/>
+                                <Label fx:id="lblBusValue" text="0x00" styleClass="wire-active-driver" minWidth="-Infinity"/>
+                            </HBox>
+                            <HBox spacing="4.0" alignment="CENTER_LEFT">
+                                <Label text="T-STATE:" styleClass="section-header" minWidth="-Infinity"/>
+                                <Label fx:id="lblTState" text="T0" styleClass="tstate-pill-active" minWidth="-Infinity"/>
+                            </HBox>
+                            <HBox spacing="4.0" alignment="CENTER_LEFT">
+                                <Label text="FLAGS:" styleClass="section-header" minWidth="-Infinity"/>
+                                <Label fx:id="lblFlags" text="Z:0 C:0" minWidth="-Infinity"/>
+                            </HBox>
+                            <HBox spacing="4.0" alignment="CENTER_LEFT">
+                                <Label text="PC:" styleClass="section-header" minWidth="-Infinity"/>
+                                <Label fx:id="lblPc" text="0x00" minWidth="-Infinity"/>
+                            </HBox>
+                            <HBox spacing="4.0" alignment="CENTER_LEFT">
+                                <Label text="MAR:" styleClass="section-header" minWidth="-Infinity"/>
+                                <Label fx:id="lblMar" text="0x00" minWidth="-Infinity"/>
+                            </HBox>
+                            <HBox spacing="4.0" alignment="CENTER_LEFT">
+                                <Label text="IR:" styleClass="section-header" minWidth="-Infinity"/>
+                                <Label fx:id="lblIr" text="0x00" minWidth="-Infinity"/>
+                            </HBox>
+                            <HBox spacing="4.0" alignment="CENTER_LEFT">
+                                <Label text="REG A:" styleClass="section-header" minWidth="-Infinity"/>
+                                <Label fx:id="lblRegA" text="0x00" minWidth="-Infinity"/>
+                            </HBox>
+                            <HBox spacing="4.0" alignment="CENTER_LEFT">
+                                <Label text="REG B:" styleClass="section-header" minWidth="-Infinity"/>
+                                <Label fx:id="lblRegB" text="0x00" minWidth="-Infinity"/>
+                            </HBox>
+                            <HBox spacing="4.0" alignment="CENTER_LEFT">
+                                <Label text="ALU:" styleClass="section-header" minWidth="-Infinity"/>
+                                <Label fx:id="lblAlu" text="0x00" minWidth="-Infinity"/>
+                            </HBox>
+                        </FlowPane>
                         <StackPane fx:id="paneSchematicHost" VBox.vgrow="ALWAYS" styleClass="panel-subcard"/>
                     </VBox>
                 </Tab>
