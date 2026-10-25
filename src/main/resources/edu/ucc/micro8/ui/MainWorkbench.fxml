@@ -36,16 +36,16 @@
 
             <Separator orientation="VERTICAL"/>
 
-            <Button fx:id="btnRun" text="Run"/>
-            <Button fx:id="btnPause" text="Pause"/>
-            <Button fx:id="btnStepMicro" text="Step Micro"/>
-            <Button fx:id="btnStepMacro" text="Step Macro"/>
+            <Button fx:id="btnRun" text="Run" onAction="#handleRun"/>
+            <Button fx:id="btnPause" text="Pause" onAction="#handlePause"/>
+            <Button fx:id="btnStepMicro" text="Step Micro" onAction="#handleStepMicro"/>
+            <Button fx:id="btnStepMacro" text="Step Macro" onAction="#handleStepMacro"/>
 
             <Separator orientation="VERTICAL"/>
 
-            <Button fx:id="btnUndoMicro" text="Undo Micro"/>
-            <Button fx:id="btnUndoMacro" text="Undo Macro"/>
-            <Button fx:id="btnReset" text="Reset"/>
+            <Button fx:id="btnUndoMicro" text="Undo Micro" onAction="#handleUndoMicro"/>
+            <Button fx:id="btnUndoMacro" text="Undo Macro" onAction="#handleUndoMacro"/>
+            <Button fx:id="btnReset" text="Reset" onAction="#handleReset"/>
 
             <Separator orientation="VERTICAL"/>
 
@@ -84,19 +84,17 @@
 
             <TabPane tabClosingPolicy="UNAVAILABLE" styleClass="panel-card">
                 <Tab text="CPU">
-                    <VBox spacing="10.0">
+                    <VBox spacing="8.0">
                         <padding>
                             <Insets top="10.0" right="10.0" bottom="10.0" left="10.0"/>
                         </padding>
-                        <HBox spacing="16.0" alignment="CENTER_LEFT">
-                            <Label text="8-BIT SYSTEM BUS:"/>
+                        <HBox spacing="14.0" alignment="CENTER_LEFT">
+                            <Label text="BUS:"/>
                             <Label fx:id="lblBusValue" text="0x00" styleClass="wire-active-driver"/>
                             <Label text="T-STATE:"/>
                             <Label fx:id="lblTState" text="T0" styleClass="tstate-pill-active"/>
                             <Label text="FLAGS:"/>
                             <Label fx:id="lblFlags" text="Z:0 C:0"/>
-                        </HBox>
-                        <HBox spacing="16.0" alignment="CENTER_LEFT">
                             <Label text="PC:"/>
                             <Label fx:id="lblPc" text="0x00"/>
                             <Label text="MAR:"/>
@@ -110,6 +108,7 @@
                             <Label text="ALU:"/>
                             <Label fx:id="lblAlu" text="0x00"/>
                         </HBox>
+                        <StackPane fx:id="paneSchematicHost" VBox.vgrow="ALWAYS" styleClass="panel-subcard"/>
                     </VBox>
                 </Tab>
                 <Tab text="Microcode">
