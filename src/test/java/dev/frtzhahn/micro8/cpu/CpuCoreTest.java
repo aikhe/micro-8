@@ -1,4 +1,4 @@
-package edu.ucc.micro8.cpu;
+package dev.frtzhahn.micro8.cpu;
 
 import org.junit.jupiter.api.Test;
 
