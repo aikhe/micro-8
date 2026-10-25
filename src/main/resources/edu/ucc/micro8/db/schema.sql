@@ -38,5 +38,23 @@ CREATE TABLE IF NOT EXISTS microcode_step_signals (
     FOREIGN KEY (signal_id) REFERENCES control_signals(signal_id)
 );
 
+CREATE TABLE IF NOT EXISTS workspace_snapshots (
+    snapshot_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL,
+    assembly_source TEXT NOT NULL,
+    ram_blob BLOB NOT NULL CHECK (length(ram_blob) = 256),
+    reg_a INTEGER NOT NULL,
+    reg_b INTEGER NOT NULL,
+    pc INTEGER NOT NULL,
+    mar INTEGER NOT NULL,
+    ir INTEGER NOT NULL,
+    out_reg INTEGER NOT NULL,
+    zero_flag INTEGER NOT NULL CHECK (zero_flag IN (0, 1)),
+    carry_flag INTEGER NOT NULL CHECK (carry_flag IN (0, 1)),
+    t_state INTEGER NOT NULL CHECK (t_state >= 0 AND t_state <= 5),
+    cycle_count INTEGER NOT NULL
+);
+
 INSERT OR IGNORE INTO app_settings (setting_key, setting_value)
 VALUES ('hide_onboarding', '0');
