@@ -129,19 +129,71 @@
     -fx-background-color: #1E3A5F;
 }
 
+.table-view,
 .workbench-table {
     -fx-background-color: #111318;
     -fx-border-color: #2A2F3A;
     -fx-border-width: 1px;
 }
 
+.table-view .column-header-background,
 .workbench-table .column-header-background {
+    -fx-background-color: #1A1D24;
+    -fx-border-color: #2A2F3A;
+    -fx-border-width: 0 0 1px 0;
+}
+
+.table-view .filler,
+.table-view .corner,
+.workbench-table .filler,
+.workbench-table .corner {
     -fx-background-color: #1A1D24;
 }
 
+.table-view .column-header,
+.workbench-table .column-header {
+    -fx-background-color: #1A1D24;
+    -fx-border-color: #2A2F3A;
+    -fx-border-width: 0 1px 0 0;
+    -fx-padding: 6px 8px 6px 8px;
+}
+
+.table-view .column-header .label,
+.workbench-table .column-header .label {
+    -fx-text-fill: #94A3B8;
+    -fx-font-weight: bold;
+    -fx-font-size: 11px;
+    -fx-alignment: CENTER_LEFT;
+}
+
+.table-view .table-row-cell,
 .workbench-table .table-row-cell {
     -fx-background-color: #111318;
     -fx-text-fill: #E2E8F0;
+    -fx-border-color: #1A1D24;
+    -fx-border-width: 0 0 1px 0;
+}
+
+.table-view .table-row-cell:odd,
+.workbench-table .table-row-cell:odd {
+    -fx-background-color: #14171E;
+}
+
+.table-view .table-row-cell:selected,
+.workbench-table .table-row-cell:selected {
+    -fx-background-color: #1E3A5F;
+    -fx-text-fill: #00E5FF;
+}
+
+.table-view .table-row-cell:selected .label,
+.workbench-table .table-row-cell:selected .label {
+    -fx-text-fill: #00E5FF;
+}
+
+.table-view .placeholder .label,
+.workbench-table .placeholder .label {
+    -fx-text-fill: #64748B;
+    -fx-font-style: italic;
 }
 
 .wire-idle {
@@ -271,5 +323,80 @@
 
 .check-box:selected > .box > .mark {
     -fx-background-color: #00E5FF;
+}
+
+/* TabPane Dark Modern Hardware Styling */
+.tab-pane {
+    -fx-tab-min-height: 28px;
+    -fx-tab-max-height: 28px;
+}
+
+.tab-pane > .tab-header-area {
+    -fx-padding: 0 0 2px 0;
+}
+
+.tab-pane > .tab-header-area > .tab-header-background {
+    -fx-background-color: #111318;
+    -fx-border-color: #2A2F3A;
+    -fx-border-width: 0 0 1px 0;
+}
+
+.tab-pane > .tab-header-area > .headers-region > .tab {
+    -fx-background-color: #1A1D24;
+    -fx-border-color: #2A2F3A #2A2F3A transparent #2A2F3A;
+    -fx-border-width: 1px;
+    -fx-border-radius: 4px 4px 0 0;
+    -fx-background-radius: 4px 4px 0 0;
+    -fx-padding: 4px 14px 4px 14px;
+}
+
+.tab-pane > .tab-header-area > .headers-region > .tab:hover {
+    -fx-background-color: #242936;
+}
+
+.tab-pane > .tab-header-area > .headers-region > .tab:selected {
+    -fx-background-color: #242936;
+    -fx-border-color: #00E5FF #2A2F3A transparent #2A2F3A;
+    -fx-border-width: 2px 1px 0 1px;
+}
+
+.tab-pane > .tab-header-area > .headers-region > .tab .tab-label {
+    -fx-text-fill: #94A3B8;
+    -fx-font-size: 11px;
+    -fx-font-weight: normal;
+}
+
+.tab-pane > .tab-header-area > .headers-region > .tab:selected .tab-label {
+    -fx-text-fill: #00E5FF;
+    -fx-font-weight: bold;
+}
+
+.tab-pane:focused > .tab-header-area > .headers-region > .tab:selected .focus-indicator {
+    -fx-border-color: transparent;
+}
+
+/* ScrollBar Dark Theme */
+.scroll-bar:vertical,
+.scroll-bar:horizontal {
+    -fx-background-color: #111318;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: #2A2F3A;
+    -fx-background-radius: 3px;
+}
+
+.scroll-bar .thumb:hover {
+    -fx-background-color: #3E4758;
+}
+
+.scroll-bar .track {
+    -fx-background-color: #161920;
+}
+
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
 }
 
