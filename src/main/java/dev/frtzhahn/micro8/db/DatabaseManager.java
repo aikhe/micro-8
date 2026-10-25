@@ -1,6 +1,6 @@
-package edu.ucc.micro8.db;
+package dev.frtzhahn.micro8.db;
 
-import edu.ucc.micro8.lab.LabRepository;
+import dev.frtzhahn.micro8.lab.LabRepository;
 
 import java.nio.file.Path;
 import java.sql.Connection;
