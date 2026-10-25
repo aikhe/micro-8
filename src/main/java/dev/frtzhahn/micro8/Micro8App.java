@@ -1,10 +1,10 @@
-package edu.ucc.micro8;
+package dev.frtzhahn.micro8;
 
-import edu.ucc.micro8.db.DatabaseManager;
-import edu.ucc.micro8.db.IsaRepository;
-import edu.ucc.micro8.db.SnapshotRepository;
-import edu.ucc.micro8.ui.MainWorkbenchController;
-import edu.ucc.micro8.ui.OnboardingController;
+import dev.frtzhahn.micro8.db.DatabaseManager;
+import dev.frtzhahn.micro8.db.IsaRepository;
+import dev.frtzhahn.micro8.db.SnapshotRepository;
+import dev.frtzhahn.micro8.ui.MainWorkbenchController;
+import dev.frtzhahn.micro8.ui.OnboardingController;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -31,7 +31,7 @@ public final class Micro8App extends Application {
         new IsaRepository(dbManager).initializeSchemaAndSeed();
 
         URL fxmlUrl = Objects.requireNonNull(
-                getClass().getResource("/edu/ucc/micro8/ui/MainWorkbench.fxml"),
+                getClass().getResource("/dev/frtzhahn/micro8/ui/MainWorkbench.fxml"),
                 "Missing MainWorkbench.fxml resource"
         );
         FXMLLoader loader = new FXMLLoader(fxmlUrl);
@@ -44,7 +44,7 @@ public final class Micro8App extends Application {
 
         Scene scene = new Scene(root, DEFAULT_WIDTH, DEFAULT_HEIGHT);
         URL cssUrl = Objects.requireNonNull(
-                getClass().getResource("/edu/ucc/micro8/ui/workbench.css"),
+                getClass().getResource("/dev/frtzhahn/micro8/ui/workbench.css"),
                 "Missing workbench.css resource"
         );
         scene.getStylesheets().add(cssUrl.toExternalForm());
