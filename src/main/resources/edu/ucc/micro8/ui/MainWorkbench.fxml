@@ -68,8 +68,8 @@
 
             <Region HBox.hgrow="ALWAYS"/>
 
-            <Button fx:id="btnSnapshots" text="Snapshots"/>
-            <Button fx:id="btnHelpOnboarding" text="Quickstart"/>
+            <Button fx:id="btnSnapshots" text="Snapshots" onAction="#handleSnapshots"/>
+            <Button fx:id="btnHelpOnboarding" text="Quickstart" onAction="#handleHelpOnboarding"/>
         </HBox>
     </top>
 
