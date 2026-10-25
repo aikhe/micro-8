@@ -1,26 +1,26 @@
-package edu.ucc.micro8.ui;
+package dev.frtzhahn.micro8.ui;
 
-import edu.ucc.micro8.asm.AssembledProgram;
-import edu.ucc.micro8.asm.Assembler;
-import edu.ucc.micro8.asm.SymbolEntry;
-import edu.ucc.micro8.asm.SyntaxError;
-import edu.ucc.micro8.cpu.ControlSignals;
-import edu.ucc.micro8.cpu.ControlSignals.SignalSpec;
-import edu.ucc.micro8.cpu.CpuClockRunner;
-import edu.ucc.micro8.cpu.CpuCore;
-import edu.ucc.micro8.cpu.CpuSnapshot;
-import edu.ucc.micro8.cpu.TraceRow;
-import edu.ucc.micro8.db.BusContentionException;
-import edu.ucc.micro8.db.DatabaseManager;
-import edu.ucc.micro8.db.InstructionDef;
-import edu.ucc.micro8.db.IsaRepository;
-import edu.ucc.micro8.db.SnapshotRepository;
-import edu.ucc.micro8.db.WorkspaceSnapshot;
-import edu.ucc.micro8.lab.LabChallenge;
-import edu.ucc.micro8.lab.LabGradeReport;
-import edu.ucc.micro8.lab.LabGrader;
-import edu.ucc.micro8.lab.LabRepository;
-import edu.ucc.micro8.lab.LabTestResult;
+import dev.frtzhahn.micro8.asm.AssembledProgram;
+import dev.frtzhahn.micro8.asm.Assembler;
+import dev.frtzhahn.micro8.asm.SymbolEntry;
+import dev.frtzhahn.micro8.asm.SyntaxError;
+import dev.frtzhahn.micro8.cpu.ControlSignals;
+import dev.frtzhahn.micro8.cpu.ControlSignals.SignalSpec;
+import dev.frtzhahn.micro8.cpu.CpuClockRunner;
+import dev.frtzhahn.micro8.cpu.CpuCore;
+import dev.frtzhahn.micro8.cpu.CpuSnapshot;
+import dev.frtzhahn.micro8.cpu.TraceRow;
+import dev.frtzhahn.micro8.db.BusContentionException;
+import dev.frtzhahn.micro8.db.DatabaseManager;
+import dev.frtzhahn.micro8.db.InstructionDef;
+import dev.frtzhahn.micro8.db.IsaRepository;
+import dev.frtzhahn.micro8.db.SnapshotRepository;
+import dev.frtzhahn.micro8.db.WorkspaceSnapshot;
+import dev.frtzhahn.micro8.lab.LabChallenge;
+import dev.frtzhahn.micro8.lab.LabGradeReport;
+import dev.frtzhahn.micro8.lab.LabGrader;
+import dev.frtzhahn.micro8.lab.LabRepository;
+import dev.frtzhahn.micro8.lab.LabTestResult;
 import javafx.animation.AnimationTimer;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -1626,7 +1626,7 @@ public final class MainWorkbenchController {
         root.getStyleClass().add("root-workbench");
 
         Scene scene = new Scene(root, 640.0, 420.0);
-        URL cssUrl = getClass().getResource("/edu/ucc/micro8/ui/workbench.css");
+        URL cssUrl = getClass().getResource("/dev/frtzhahn/micro8/ui/workbench.css");
         if (cssUrl != null) {
             scene.getStylesheets().add(cssUrl.toExternalForm());
         }
