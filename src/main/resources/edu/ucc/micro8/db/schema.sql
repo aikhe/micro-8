@@ -56,5 +56,28 @@ CREATE TABLE IF NOT EXISTS workspace_snapshots (
     cycle_count INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS lab_challenges (
+    lab_id INTEGER PRIMARY KEY,
+    title TEXT NOT NULL UNIQUE,
+    description TEXT NOT NULL,
+    starter_code TEXT NOT NULL,
+    max_cycles INTEGER NOT NULL DEFAULT 5000,
+    passed INTEGER NOT NULL DEFAULT 0 CHECK (passed IN (0, 1)),
+    passed_cases INTEGER NOT NULL DEFAULT 0,
+    total_cases INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS lab_test_cases (
+    case_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    lab_id INTEGER NOT NULL,
+    case_order INTEGER NOT NULL,
+    description TEXT NOT NULL,
+    input_ram_spec TEXT NOT NULL,
+    expected_out_reg INTEGER NOT NULL CHECK (expected_out_reg >= -1 AND expected_out_reg <= 255),
+    expected_reg_a INTEGER NOT NULL DEFAULT -1 CHECK (expected_reg_a >= -1 AND expected_reg_a <= 255),
+    expected_ram_spec TEXT NOT NULL DEFAULT '',
+    FOREIGN KEY (lab_id) REFERENCES lab_challenges(lab_id) ON DELETE CASCADE
+);
+
 INSERT OR IGNORE INTO app_settings (setting_key, setting_value)
 VALUES ('hide_onboarding', '0');
