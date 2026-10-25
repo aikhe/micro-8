@@ -1,6 +1,6 @@
-package edu.ucc.micro8.ui;
+package dev.frtzhahn.micro8.ui;
 
-import edu.ucc.micro8.db.SnapshotRepository;
+import dev.frtzhahn.micro8.db.SnapshotRepository;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -192,7 +192,7 @@ public final class OnboardingController {
     }
 
     static Image loadOrRenderSlideImage(SlideSpec spec) {
-        String resourcePath = "/edu/ucc/micro8/ui/slides/slide-" + spec.slideNumber() + ".png";
+        String resourcePath = "/dev/frtzhahn/micro8/ui/slides/slide-" + spec.slideNumber() + ".png";
         try (InputStream in = OnboardingController.class.getResourceAsStream(resourcePath)) {
             if (in != null) {
                 return new Image(in);
@@ -253,14 +253,14 @@ public final class OnboardingController {
     public static void showModal(Window owner, SnapshotRepository snapshotRepository) {
         try {
             FXMLLoader loader = new FXMLLoader(
-                    OnboardingController.class.getResource("/edu/ucc/micro8/ui/OnboardingDialog.fxml")
+                    OnboardingController.class.getResource("/dev/frtzhahn/micro8/ui/OnboardingDialog.fxml")
             );
             Parent root = loader.load();
             OnboardingController controller = loader.getController();
             controller.setSnapshotRepository(snapshotRepository);
 
             Scene scene = new Scene(root, 760, 580);
-            URL cssUrl = OnboardingController.class.getResource("/edu/ucc/micro8/ui/workbench.css");
+            URL cssUrl = OnboardingController.class.getResource("/dev/frtzhahn/micro8/ui/workbench.css");
             if (cssUrl != null) {
                 scene.getStylesheets().add(cssUrl.toExternalForm());
             }
