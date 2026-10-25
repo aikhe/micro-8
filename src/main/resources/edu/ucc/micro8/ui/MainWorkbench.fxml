@@ -8,10 +8,12 @@
 <?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Priority?>
 <?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
 <BorderPane xmlns="http://javafx.com/javafx/25"
@@ -30,7 +32,7 @@
             </BorderPane.margin>
 
             <Label text="MICRO-8" styleClass="workbench-title"/>
-            <Button fx:id="btnAssemble" text="Assemble"/>
+            <Button fx:id="btnAssemble" text="Assemble" onAction="#handleAssemble"/>
 
             <Separator orientation="VERTICAL"/>
 
@@ -74,13 +76,10 @@
                     <Insets top="10.0" right="10.0" bottom="10.0" left="10.0"/>
                 </padding>
                 <Label text="ASSEMBLY STUDIO" styleClass="section-header"/>
-                <VBox VBox.vgrow="ALWAYS" styleClass="panel-subcard">
-                    <padding>
-                        <Insets top="8.0" right="8.0" bottom="8.0" left="8.0"/>
-                    </padding>
-                    <Label text="Assembly source editor"/>
-                </VBox>
-                <Label fx:id="lblAsmDiagnostics" text="Ready." styleClass="diagnostics-banner"/>
+                <StackPane fx:id="paneCodeHost" VBox.vgrow="ALWAYS" styleClass="panel-subcard"/>
+                <Label text="SYMBOL TABLE" styleClass="section-header"/>
+                <TableView fx:id="tblSymbolTable" prefHeight="135.0" styleClass="workbench-table"/>
+                <Label fx:id="lblAsmDiagnostics" text="Ready." wrapText="true" styleClass="diagnostics-banner"/>
             </VBox>
 
             <TabPane tabClosingPolicy="UNAVAILABLE" styleClass="panel-card">
