@@ -46,8 +46,8 @@ public final class DatabaseManager {
     }
 
     public void initialize() throws SQLException {
-        try (Connection ignored = openConnection()) {
-            // initializes database file and WAL headers on disk
+        try (Connection conn = openConnection()) {
+            new IsaRepository(this).initializeSchemaAndSeed(conn);
         }
     }
 
