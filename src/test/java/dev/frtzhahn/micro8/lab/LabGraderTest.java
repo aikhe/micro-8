@@ -1,8 +1,8 @@
-package edu.ucc.micro8.lab;
+package dev.frtzhahn.micro8.lab;
 
-import edu.ucc.micro8.cpu.CpuCore;
-import edu.ucc.micro8.db.DatabaseManager;
-import edu.ucc.micro8.db.IsaRepository;
+import dev.frtzhahn.micro8.cpu.CpuCore;
+import dev.frtzhahn.micro8.db.DatabaseManager;
+import dev.frtzhahn.micro8.db.IsaRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
