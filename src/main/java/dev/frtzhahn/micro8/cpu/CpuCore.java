@@ -1,27 +1,27 @@
-package edu.ucc.micro8.cpu;
+package dev.frtzhahn.micro8.cpu;
 
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static edu.ucc.micro8.cpu.ControlSignals.AI;
-import static edu.ucc.micro8.cpu.ControlSignals.AO;
-import static edu.ucc.micro8.cpu.ControlSignals.BI;
-import static edu.ucc.micro8.cpu.ControlSignals.BO;
-import static edu.ucc.micro8.cpu.ControlSignals.CE;
-import static edu.ucc.micro8.cpu.ControlSignals.CLR;
-import static edu.ucc.micro8.cpu.ControlSignals.CO;
-import static edu.ucc.micro8.cpu.ControlSignals.EO;
-import static edu.ucc.micro8.cpu.ControlSignals.FI;
-import static edu.ucc.micro8.cpu.ControlSignals.HLT;
-import static edu.ucc.micro8.cpu.ControlSignals.II;
-import static edu.ucc.micro8.cpu.ControlSignals.J;
-import static edu.ucc.micro8.cpu.ControlSignals.MI;
-import static edu.ucc.micro8.cpu.ControlSignals.OI;
-import static edu.ucc.micro8.cpu.ControlSignals.RI;
-import static edu.ucc.micro8.cpu.ControlSignals.RO;
-import static edu.ucc.micro8.cpu.ControlSignals.SU;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.AI;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.AO;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.BI;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.BO;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.CE;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.CLR;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.CO;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.EO;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.FI;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.HLT;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.II;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.J;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.MI;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.OI;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.RI;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.RO;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.SU;
 
 /**
  * Cycle-accurate 8-bit microcoded CPU engine with 2-byte uniform ISA and T0-T5 ring counter.
