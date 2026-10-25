@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/25"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="edu.ucc.micro8.ui.OnboardingController"
+      spacing="10.0"
+      styleClass="root-workbench"
+      prefWidth="760.0" prefHeight="580.0">
+    <padding>
+        <Insets top="14.0" right="14.0" bottom="14.0" left="14.0"/>
+    </padding>
+
+    <HBox spacing="8.0" alignment="CENTER_LEFT">
+        <Label text="MICRO-8 QUICKSTART TOUR" styleClass="workbench-title"/>
+        <Region HBox.hgrow="ALWAYS"/>
+    </HBox>
+
+    <StackPane styleClass="panel-card" VBox.vgrow="ALWAYS">
+        <padding>
+            <Insets top="8.0" right="8.0" bottom="8.0" left="8.0"/>
+        </padding>
+        <ImageView fx:id="imgOnboardingSlide" fitWidth="720.0" fitHeight="420.0" preserveRatio="true"/>
+    </StackPane>
+
+    <VBox spacing="4.0" styleClass="panel-card">
+        <padding>
+            <Insets top="8.0" right="10.0" bottom="8.0" left="10.0"/>
+        </padding>
+        <Label fx:id="lblSlideTitle" text="Slide 1 - Uniform 2-Byte ISA &amp; 6-Phase Sequencer" styleClass="workbench-title"/>
+        <Label fx:id="lblSlideCaption" text="" wrapText="true"/>
+    </VBox>
+
+    <Separator/>
+
+    <HBox spacing="10.0" alignment="CENTER_LEFT">
+        <CheckBox fx:id="chkHideOnboarding" text="Don't show this on startup again" onAction="#handleToggleHideOnboarding"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button fx:id="btnPrevSlide" text="&lt;" onAction="#handlePrevSlide" minWidth="42.0"/>
+        <Label fx:id="lblSlideCounter" text="1 / 4" minWidth="48.0" alignment="CENTER"/>
+        <Button fx:id="btnNextSlide" text="&gt;" onAction="#handleNextSlide" minWidth="42.0"/>
+    </HBox>
+</VBox>
