@@ -52,6 +52,7 @@ public final class CpuCore {
     private final String[] mnemonicTable = new String[256];
     private boolean traceEnabled = true;
 
+    private final DeltaJournal journal = new DeltaJournal();
     private final AtomicReference<CpuSnapshot> latestSnapshot = new AtomicReference<>();
     private final ConcurrentLinkedQueue<TraceRow> traceQueue = new ConcurrentLinkedQueue<>();
 
@@ -77,6 +78,10 @@ public final class CpuCore {
         return controlStore;
     }
 
+    public DeltaJournal getJournal() {
+        return journal;
+    }
+
     public void setMnemonic(int opcode, String mnemonic) {
         mnemonicTable[opcode & 0xFF] = (mnemonic == null || mnemonic.isBlank()) ? "???" : mnemonic;
     }
@@ -98,6 +103,7 @@ public final class CpuCore {
             return false;
         }
 
+        int currentCycle = cycleCount;
         int executedTState = tState;
         int flagIdx = (zeroFlag ? 1 : 0) | (carryFlag ? 2 : 0);
         int opcode = Byte.toUnsignedInt(ir);
@@ -132,36 +138,69 @@ public final class CpuCore {
             busVal = Byte.toUnsignedInt(pc);
         }
 
-        // Phase B: consumers latch from busVal and control lines mutate registers
+        journal.record(currentCycle, executedTState, DeltaJournal.TARGET_T_STATE, 0, executedTState);
+        if (lastBusValue != (busVal & 0xFF)) {
+            journal.record(currentCycle, executedTState, DeltaJournal.TARGET_BUS, 0, lastBusValue & 0xFF);
+        }
+        if (lastControlWord != ctrl) {
+            journal.record(
+                    currentCycle,
+                    executedTState,
+                    DeltaJournal.TARGET_CTRL_WORD_LOW,
+                    (lastControlWord >>> 8) & 0xFF,
+                    lastControlWord & 0xFF
+            );
+            journal.record(
+                    currentCycle,
+                    executedTState,
+                    DeltaJournal.TARGET_CTRL_WORD_HIGH,
+                    (lastControlWord >>> 24) & 0xFF,
+                    (lastControlWord >>> 16) & 0xFF
+            );
+        }
+
+        // Phase B: record pre-mutation state into DeltaJournal, then latch consumers
         if ((ctrl & MI) != 0) {
+            journal.record(currentCycle, executedTState, DeltaJournal.TARGET_MAR, 0, Byte.toUnsignedInt(mar));
             mar = (byte) (busVal & 0xFF);
         }
         if ((ctrl & RI) != 0) {
-            ram[Byte.toUnsignedInt(mar)] = (byte) (busVal & 0xFF);
+            int ramAddr = Byte.toUnsignedInt(mar);
+            journal.record(currentCycle, executedTState, DeltaJournal.TARGET_RAM_BYTE, ramAddr, Byte.toUnsignedInt(ram[ramAddr]));
+            ram[ramAddr] = (byte) (busVal & 0xFF);
         }
         if ((ctrl & II) != 0) {
+            journal.record(currentCycle, executedTState, DeltaJournal.TARGET_IR, 0, Byte.toUnsignedInt(ir));
             ir = (byte) (busVal & 0xFF);
         }
         if ((ctrl & AI) != 0) {
+            journal.record(currentCycle, executedTState, DeltaJournal.TARGET_REG_A, 0, Byte.toUnsignedInt(regA));
             regA = (byte) (busVal & 0xFF);
         }
         if ((ctrl & BI) != 0) {
+            journal.record(currentCycle, executedTState, DeltaJournal.TARGET_REG_B, 0, Byte.toUnsignedInt(regB));
             regB = (byte) (busVal & 0xFF);
         }
         if ((ctrl & OI) != 0) {
+            journal.record(currentCycle, executedTState, DeltaJournal.TARGET_OUT_REG, 0, Byte.toUnsignedInt(outReg));
             outReg = (byte) (busVal & 0xFF);
         }
         if ((ctrl & J) != 0) {
+            journal.record(currentCycle, executedTState, DeltaJournal.TARGET_PC, 0, Byte.toUnsignedInt(pc));
             pc = (byte) (busVal & 0xFF);
         }
         if ((ctrl & CE) != 0) {
+            journal.record(currentCycle, executedTState, DeltaJournal.TARGET_PC, 0, Byte.toUnsignedInt(pc));
             pc = (byte) ((Byte.toUnsignedInt(pc) + 1) & 0xFF);
         }
         if ((ctrl & FI) != 0) {
+            int oldFlags = (zeroFlag ? 1 : 0) | (carryFlag ? 2 : 0);
+            journal.record(currentCycle, executedTState, DeltaJournal.TARGET_FLAGS, 0, oldFlags);
             zeroFlag = aluZero;
             carryFlag = aluCarry;
         }
         if ((ctrl & HLT) != 0) {
+            journal.record(currentCycle, executedTState, DeltaJournal.TARGET_HALTED, 0, halted ? 1 : 0);
             halted = true;
         }
 
@@ -214,6 +253,58 @@ public final class CpuCore {
         return true;
     }
 
+    public boolean undoMicroStep() {
+        if (journal.isEmpty()) {
+            return false;
+        }
+        int targetCycle = journal.peekNewestCycle();
+        while (!journal.isEmpty() && journal.peekNewestCycle() == targetCycle) {
+            long entry = journal.popNewest();
+            int target = DeltaJournal.unpackTarget(entry);
+            int addr = DeltaJournal.unpackAddress(entry);
+            int oldVal = DeltaJournal.unpackOldValue(entry);
+
+            switch (target) {
+                case DeltaJournal.TARGET_REG_A -> regA = (byte) (oldVal & 0xFF);
+                case DeltaJournal.TARGET_REG_B -> regB = (byte) (oldVal & 0xFF);
+                case DeltaJournal.TARGET_PC -> pc = (byte) (oldVal & 0xFF);
+                case DeltaJournal.TARGET_MAR -> mar = (byte) (oldVal & 0xFF);
+                case DeltaJournal.TARGET_IR -> ir = (byte) (oldVal & 0xFF);
+                case DeltaJournal.TARGET_OUT_REG -> outReg = (byte) (oldVal & 0xFF);
+                case DeltaJournal.TARGET_FLAGS -> {
+                    zeroFlag = (oldVal & 1) != 0;
+                    carryFlag = (oldVal & 2) != 0;
+                }
+                case DeltaJournal.TARGET_T_STATE -> tState = oldVal & 0xFF;
+                case DeltaJournal.TARGET_HALTED -> halted = (oldVal != 0);
+                case DeltaJournal.TARGET_RAM_BYTE -> ram[addr & 0xFF] = (byte) (oldVal & 0xFF);
+                case DeltaJournal.TARGET_BUS -> lastBusValue = oldVal & 0xFF;
+                case DeltaJournal.TARGET_CTRL_WORD_LOW ->
+                        lastControlWord = (lastControlWord & 0xFFFF0000) | ((addr & 0xFF) << 8) | (oldVal & 0xFF);
+                case DeltaJournal.TARGET_CTRL_WORD_HIGH ->
+                        lastControlWord = (lastControlWord & 0x0000FFFF) | ((addr & 0xFF) << 24) | ((oldVal & 0xFF) << 16);
+                default -> throw new IllegalStateException("Unknown DeltaJournal target ID: " + target);
+            }
+        }
+        cycleCount = targetCycle;
+        publishSnapshot();
+        return true;
+    }
+
+    public int undoMacroStep() {
+        if (journal.isEmpty()) {
+            return 0;
+        }
+        int undone = 0;
+        do {
+            if (!undoMicroStep()) {
+                break;
+            }
+            undone++;
+        } while (tState != 0 && !journal.isEmpty());
+        return undone;
+    }
+
     public void reset() {
         regA = 0;
         regB = 0;
@@ -228,6 +319,7 @@ public final class CpuCore {
         cycleCount = 0;
         lastBusValue = 0;
         lastControlWord = 0;
+        journal.clear();
         traceQueue.clear();
         publishSnapshot();
     }
