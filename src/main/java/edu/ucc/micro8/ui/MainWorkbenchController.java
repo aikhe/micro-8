@@ -4,9 +4,12 @@ import edu.ucc.micro8.asm.AssembledProgram;
 import edu.ucc.micro8.asm.Assembler;
 import edu.ucc.micro8.asm.SymbolEntry;
 import edu.ucc.micro8.asm.SyntaxError;
+import edu.ucc.micro8.cpu.CpuClockRunner;
 import edu.ucc.micro8.cpu.CpuCore;
+import edu.ucc.micro8.cpu.CpuSnapshot;
 import edu.ucc.micro8.db.DatabaseManager;
 import edu.ucc.micro8.db.IsaRepository;
+import javafx.animation.AnimationTimer;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -105,6 +108,9 @@ public final class MainWorkbenchController {
     private Label lblAsmDiagnostics;
 
     @FXML
+    private StackPane paneSchematicHost;
+
+    @FXML
     private Label lblBusValue;
 
     @FXML
@@ -162,10 +168,17 @@ public final class MainWorkbenchController {
     private Button btnClearTrace;
 
     private CodeArea codeAsmEditor;
+    private CpuSchematicView schematicView;
+    private AnimationTimer uiTimer;
+
     private DatabaseManager dbManager;
     private IsaRepository isaRepository;
     private final CpuCore cpuCore = new CpuCore();
+    private final CpuClockRunner clockRunner = new CpuClockRunner(cpuCore);
     private final Assembler assembler = new Assembler();
+
+    private byte[] lastAssembledRam = new byte[256];
+    private boolean programAssembled;
     private int[] addressToSourceLine = new int[256];
     private int highlightedParagraph = -1;
 
@@ -177,11 +190,15 @@ public final class MainWorkbenchController {
             sldClockHz.valueProperty().addListener((obs, oldVal, newVal) -> {
                 int hz = Math.max(1, newVal.intValue());
                 lblClockHz.setText(hz + " Hz");
+                clockRunner.setFrequencyHz(hz);
             });
         }
 
         initSymbolTable();
         initCodeEditor();
+        initSchematicView();
+        startUiRefreshTimer();
+        syncTransportControls();
     }
 
     private void initSymbolTable() {
@@ -215,8 +232,34 @@ public final class MainWorkbenchController {
         paneCodeHost.getChildren().setAll(scrollPane);
     }
 
+    private void initSchematicView() {
+        if (paneSchematicHost == null) {
+            return;
+        }
+        schematicView = new CpuSchematicView();
+        paneSchematicHost.getChildren().setAll(schematicView);
+        synchronized (cpuCore) {
+            renderSnapshot(cpuCore.createSnapshot());
+        }
+    }
+
+    private void startUiRefreshTimer() {
+        uiTimer = new AnimationTimer() {
+            @Override
+            public void handle(long now) {
+                CpuSnapshot snap = cpuCore.consumeLatestSnapshot();
+                if (snap != null) {
+                    renderSnapshot(snap);
+                }
+                syncTransportControls();
+            }
+        };
+        uiTimer.start();
+    }
+
     @FXML
     public void handleAssemble() {
+        clockRunner.pause();
         if (codeAsmEditor == null) {
             return;
         }
@@ -227,19 +270,198 @@ public final class MainWorkbenchController {
             SyntaxError first = program.errors().getFirst();
             showDiagnosticsError(first.format() + " (" + program.errors().size() + " error(s))");
             highlightEditorLine(first.lineNumber());
+            syncTransportControls();
             return;
         }
 
         this.addressToSourceLine = program.addressToSourceLine();
-        cpuCore.wipeCleanSlate();
-        cpuCore.loadProgramBytes(0, program.ramImage());
+        this.lastAssembledRam = Arrays.copyOf(program.ramImage(), 256);
+        this.programAssembled = true;
+
+        CpuSnapshot snap;
+        synchronized (cpuCore) {
+            cpuCore.wipeCleanSlate();
+            cpuCore.loadProgramBytes(0, lastAssembledRam);
+            snap = cpuCore.createSnapshot();
+        }
 
         if (tblSymbolTable != null) {
             tblSymbolTable.setItems(FXCollections.observableArrayList(program.symbolTable()));
         }
 
         showDiagnosticsSuccess("Ready. Assembled " + program.emittedByteCount() + "B (" + program.symbolTable().size() + " symbol(s)).");
-        highlightSourceLineForPc(cpuCore.getPcUnsigned());
+        renderSnapshot(snap);
+        syncTransportControls();
+    }
+
+    @FXML
+    public void handleRun() {
+        if (!programAssembled) {
+            handleAssemble();
+            if (!programAssembled) {
+                return;
+            }
+        }
+        clockRunner.start();
+        syncTransportControls();
+    }
+
+    @FXML
+    public void handlePause() {
+        clockRunner.pause();
+        syncTransportControls();
+    }
+
+    @FXML
+    public void handleStepMicro() {
+        clockRunner.pause();
+        if (!programAssembled) {
+            handleAssemble();
+            if (!programAssembled) {
+                return;
+            }
+        }
+        CpuSnapshot snap;
+        synchronized (cpuCore) {
+            cpuCore.stepMicro();
+            snap = cpuCore.createSnapshot();
+        }
+        renderSnapshot(snap);
+        syncTransportControls();
+    }
+
+    @FXML
+    public void handleStepMacro() {
+        clockRunner.pause();
+        if (!programAssembled) {
+            handleAssemble();
+            if (!programAssembled) {
+                return;
+            }
+        }
+        CpuSnapshot snap;
+        synchronized (cpuCore) {
+            cpuCore.stepMacro();
+            snap = cpuCore.createSnapshot();
+        }
+        renderSnapshot(snap);
+        syncTransportControls();
+    }
+
+    @FXML
+    public void handleUndoMicro() {
+        clockRunner.pause();
+        CpuSnapshot snap;
+        synchronized (cpuCore) {
+            cpuCore.undoMicroStep();
+            snap = cpuCore.createSnapshot();
+        }
+        renderSnapshot(snap);
+        syncTransportControls();
+    }
+
+    @FXML
+    public void handleUndoMacro() {
+        clockRunner.pause();
+        CpuSnapshot snap;
+        synchronized (cpuCore) {
+            cpuCore.undoMacroStep();
+            snap = cpuCore.createSnapshot();
+        }
+        renderSnapshot(snap);
+        syncTransportControls();
+    }
+
+    @FXML
+    public void handleReset() {
+        clockRunner.pause();
+        CpuSnapshot snap;
+        synchronized (cpuCore) {
+            cpuCore.wipeCleanSlate();
+            if (programAssembled) {
+                cpuCore.loadProgramBytes(0, lastAssembledRam);
+            }
+            snap = cpuCore.createSnapshot();
+        }
+        renderSnapshot(snap);
+        syncTransportControls();
+    }
+
+    private void renderSnapshot(CpuSnapshot snap) {
+        if (snap == null) {
+            return;
+        }
+        if (lblCycleCount != null) {
+            lblCycleCount.setText(String.format("%05d", snap.cycleCount()));
+        }
+        if (lblBusValue != null) {
+            lblBusValue.setText(hex2(snap.busValue()));
+        }
+        if (lblTState != null) {
+            lblTState.setText("T" + snap.tState());
+        }
+        if (lblFlags != null) {
+            lblFlags.setText("Z:" + (snap.zeroFlag() ? 1 : 0) + " C:" + (snap.carryFlag() ? 1 : 0));
+        }
+        if (lblPc != null) {
+            lblPc.setText(hex2(snap.pc()));
+        }
+        if (lblMar != null) {
+            lblMar.setText(hex2(snap.mar()));
+        }
+        if (lblIr != null) {
+            lblIr.setText(hex2(snap.ir()));
+        }
+        if (lblRegA != null) {
+            lblRegA.setText(hex2(snap.regA()));
+        }
+        if (lblRegB != null) {
+            lblRegB.setText(hex2(snap.regB()));
+        }
+        if (lblAlu != null) {
+            lblAlu.setText(hex2(snap.aluResult()));
+        }
+        if (lblOutReg != null) {
+            int out = snap.outReg();
+            String asc = (out >= 0x20 && out <= 0x7E) ? ("'" + (char) out + "'") : "'.'";
+            lblOutReg.setText(String.format("%s (%03d) %s", hex2(out), out, asc));
+        }
+        if (schematicView != null) {
+            schematicView.updateFromSnapshot(snap, cpuCore.getMnemonic(snap.ir()));
+        }
+        highlightSourceLineForPc(snap.pc());
+    }
+
+    private void syncTransportControls() {
+        boolean running = clockRunner.isRunning();
+        boolean halted;
+        boolean canUndo;
+        synchronized (cpuCore) {
+            halted = cpuCore.isHalted();
+            canUndo = !cpuCore.getJournal().isEmpty();
+        }
+
+        if (codeAsmEditor != null) {
+            codeAsmEditor.setEditable(!running);
+        }
+        if (btnRun != null) {
+            btnRun.setDisable(running || halted);
+        }
+        if (btnPause != null) {
+            btnPause.setDisable(!running);
+        }
+        if (btnStepMicro != null) {
+            btnStepMicro.setDisable(running || halted);
+        }
+        if (btnStepMacro != null) {
+            btnStepMacro.setDisable(running || halted);
+        }
+        if (btnUndoMicro != null) {
+            btnUndoMicro.setDisable(running || !canUndo);
+        }
+        if (btnUndoMacro != null) {
+            btnUndoMacro.setDisable(running || !canUndo);
+        }
     }
 
     public void highlightSourceLineForPc(int pc) {
@@ -326,7 +548,9 @@ public final class MainWorkbenchController {
         }
         try {
             assembler.updateInstructions(isaRepository.listInstructions());
-            cpuCore.setControlStore(isaRepository.compileControlStore());
+            synchronized (cpuCore) {
+                cpuCore.setControlStore(isaRepository.compileControlStore());
+            }
         } catch (SQLException ex) {
             showDiagnosticsError("Database error loading ISA: " + ex.getMessage());
         }
@@ -341,6 +565,13 @@ public final class MainWorkbenchController {
         }
     }
 
+    public void shutdown() {
+        if (uiTimer != null) {
+            uiTimer.stop();
+        }
+        clockRunner.shutdown();
+    }
+
     public DatabaseManager getDatabaseManager() {
         return dbManager;
     }
@@ -353,7 +584,18 @@ public final class MainWorkbenchController {
         return cpuCore;
     }
 
+    public CpuClockRunner getClockRunner() {
+        return clockRunner;
+    }
+
     public Assembler getAssembler() {
         return assembler;
+    }
+
+    private static String hex2(int value) {
+        int v = value & 0xFF;
+        char high = Character.toUpperCase(Character.forDigit((v >>> 4) & 0x0F, 16));
+        char low = Character.toUpperCase(Character.forDigit(v & 0x0F, 16));
+        return "0x" + high + low;
     }
 }
