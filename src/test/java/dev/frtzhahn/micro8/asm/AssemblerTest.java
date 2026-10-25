@@ -1,7 +1,7 @@
-package edu.ucc.micro8.asm;
+package dev.frtzhahn.micro8.asm;
 
-import edu.ucc.micro8.cpu.CpuCore;
-import edu.ucc.micro8.db.InstructionDef;
+import dev.frtzhahn.micro8.cpu.CpuCore;
+import dev.frtzhahn.micro8.db.InstructionDef;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
