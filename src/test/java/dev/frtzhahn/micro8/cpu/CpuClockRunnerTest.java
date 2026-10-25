@@ -1,7 +1,7 @@
-package edu.ucc.micro8.cpu;
+package dev.frtzhahn.micro8.cpu;
 
-import edu.ucc.micro8.asm.AssembledProgram;
-import edu.ucc.micro8.asm.Assembler;
+import dev.frtzhahn.micro8.asm.AssembledProgram;
+import dev.frtzhahn.micro8.asm.Assembler;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
