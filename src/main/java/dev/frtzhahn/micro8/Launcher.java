@@ -1,4 +1,4 @@
-package edu.ucc.micro8;
+package dev.frtzhahn.micro8;
 
 import javafx.application.Application;
 
