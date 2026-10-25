@@ -1,10 +1,10 @@
-package edu.ucc.micro8.db;
+package dev.frtzhahn.micro8.db;
 
-import edu.ucc.micro8.asm.AssembledProgram;
-import edu.ucc.micro8.asm.Assembler;
-import edu.ucc.micro8.cpu.CpuCore;
-import edu.ucc.micro8.ui.DatasheetGenerator;
-import edu.ucc.micro8.ui.MicrocodeStepRow;
+import dev.frtzhahn.micro8.asm.AssembledProgram;
+import dev.frtzhahn.micro8.asm.Assembler;
+import dev.frtzhahn.micro8.cpu.CpuCore;
+import dev.frtzhahn.micro8.ui.DatasheetGenerator;
+import dev.frtzhahn.micro8.ui.MicrocodeStepRow;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -12,16 +12,16 @@ import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.List;
 
-import static edu.ucc.micro8.cpu.ControlSignals.AI;
-import static edu.ucc.micro8.cpu.ControlSignals.BI;
-import static edu.ucc.micro8.cpu.ControlSignals.CE;
-import static edu.ucc.micro8.cpu.ControlSignals.CLR;
-import static edu.ucc.micro8.cpu.ControlSignals.CO;
-import static edu.ucc.micro8.cpu.ControlSignals.EO;
-import static edu.ucc.micro8.cpu.ControlSignals.FI;
-import static edu.ucc.micro8.cpu.ControlSignals.II;
-import static edu.ucc.micro8.cpu.ControlSignals.MI;
-import static edu.ucc.micro8.cpu.ControlSignals.RO;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.AI;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.BI;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.CE;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.CLR;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.CO;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.EO;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.FI;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.II;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.MI;
+import static dev.frtzhahn.micro8.cpu.ControlSignals.RO;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
