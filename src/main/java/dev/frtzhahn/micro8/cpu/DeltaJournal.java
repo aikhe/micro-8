@@ -1,4 +1,4 @@
-package edu.ucc.micro8.cpu;
+package dev.frtzhahn.micro8.cpu;
 
 /**
  * Bounded zero-allocation 64-bit ring buffer for cycle-accurate reverse debugging.
